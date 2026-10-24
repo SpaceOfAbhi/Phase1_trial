@@ -121,12 +121,29 @@ Replace the example IP with yours. Stop and rerun Flutter when changing `API_BAS
 | Device absent or `unauthorized` | Unlock the phone, accept USB debugging, check cable/driver and retry `adb devices`. |
 | `adb` not recognized | Add the Android SDK's `platform-tools` directory to PATH or run `adb` by its full path. |
 | Flutter dependency resolution fails | Check Flutter/Dart versions in step 1; run `flutter doctor` for toolchain issues. |
+| `Could not determine wrapper version` / `No build receipt resource found` | Older Flutter-generated wrappers can fail if a parent folder ends in `!` (for example `Project P!`). Run `git pull` to get the committed wrapper fix, then retry. Alternatively rename that folder without `!` and reopen the project. See the wrapper check below. |
 | Python cannot find compatible packages | Confirm 64-bit Python 3.12. Versions are pinned in `backend/requirements.lock.txt`. |
 | Backend fails while reading CSV data | Run `git lfs pull` and check that the EMG file is CSV, not a pointer. |
 | Port 8000 already occupied | Reuse the running Liftly backend or stop its terminal before starting another copy. |
 | App cannot reach the analysis server | Check `/health`, keep Python running, repeat `adb reverse` and verify Flutter's API URL. |
 | Preview works but real analysis fails | Preview is independent of Python; check the backend and phone connection separately. |
 | Wi-Fi address unreachable | Check IP, bind address, private-network firewall and whether Wi-Fi isolates devices. |
+
+### Check the Android build launcher
+
+The Gradle wrapper starts the Android build tools. It runs before Flutter compiles the Android app and before any API connection. All four wrapper files are committed: `android/gradlew`, `android/gradlew.bat`, `android/gradle/wrapper/gradle-wrapper.jar` and its `.properties` file. Do not exclude them when sharing the project.
+
+After pulling the wrapper fix, from `workout_ai/` on Windows:
+
+```powershell
+.\android\gradlew.bat --version
+flutter pub get
+flutter run --debug --dart-define=API_BASE_URL=http://127.0.0.1:8000
+```
+
+The first command should print **Gradle 9.3.1**. It downloads that pinned distribution on first use and verifies its checksum. Java 17 or newer is needed to start this Gradle version. If Java cannot be found, use the JDK configured for Flutter/Android Studio and check `flutter doctor -v`.
+
+The wrapper starts successfully in a Windows path ending in `!` after this fix. That verifies this specific error; it does not establish that a complete Android build or phone installation has passed.
 
 ## References
 

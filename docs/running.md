@@ -71,6 +71,8 @@ $env:PUB_CACHE = 'D:\tools\pub-cache'
 
 Backend tests exercise the real saved model, invalid input, and parity with training preprocessing. Flutter tests cover response parsing, repetition counting, error recovery, persistence and app launch.
 
+For the Android build launcher, run `android/gradlew.bat --version` from `workout_ai/` on Windows (`./android/gradlew --version` on macOS/Linux). It should print Gradle 9.3.1. The committed wrapper was checksum-verified and tested on Windows in a path containing a directory ending in `!`, which reproduces a failure in the old Flutter-generated wrapper. This launcher check does not compile the Android app.
+
 The initial Python import can be slow while Windows scans the newly installed libraries. Subsequent backend tests completed much faster. The test client currently emits an upstream Starlette/httpx deprecation warning. Existing UI code also has analyzer style/deprecation findings; compilation and tests are checked separately.
 
 For a static preview of the release build:
