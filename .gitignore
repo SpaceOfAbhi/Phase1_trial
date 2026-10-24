@@ -2,3 +2,9 @@
 __pycache__/
 .pytest_cache/
 *.pyc
+
+# Local agent instructions and handoff notes
+AGENTS.md
+agents.md
+HANDOFF.md
+handoff.md

@@ -1,17 +1,9 @@
-# workout_ai
+# Liftly Flutter app
 
-A new Flutter project.
+This is the Flutter project folder. The repository root one level above contains the Python backend, model and documentation.
 
-## Getting Started
+- [Clone and run on an Android phone](../docs/android-quickstart.md)
+- [Architecture and source map](../docs/architecture.md)
+- [All documentation](../docs/README.md)
 
-This project is a starting point for a Flutter application.
-
-A few resources to get you started if this is your first Flutter project:
-
-- [Learn Flutter](https://docs.flutter.dev/get-started/learn-flutter)
-- [Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
-- [Flutter learning resources](https://docs.flutter.dev/reference/learning-resources)
-
-For help getting started with Flutter development, view the
-[online documentation](https://docs.flutter.dev/), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
+Run `flutter pub get` here. Real inference also requires the Python API; the Android guide covers the backend and phone connection. **Offline UI preview** works without the API and produces mock predictions.

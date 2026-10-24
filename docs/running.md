@@ -1,6 +1,10 @@
 # Run and verify
 
-Run commands from the repository root, `Phase1`. Keep the backend and app running in separate terminals. The browser version is the verified target.
+[Documentation index](README.md) · [Android phone quick start](android-quickstart.md) · [Architecture](architecture.md)
+
+For a new clone and physical phone, start with the Android guide. This page covers development commands, the original computer's scripts and verification.
+
+Run commands from the repository root: the folder containing `backend/`, `ML/` and `workout_ai/`. Keep the backend and app running in separate terminals. The browser version is the verified target.
 
 When cloning from GitHub, install Git LFS and run `git lfs pull` to retrieve the large EMG dataset. A small LFS pointer in place of that CSV means the dataset has not been downloaded yet.
 
@@ -22,7 +26,7 @@ The Flutter SDK was moved off C: at the owner's request. The launch script sets 
 .\start-app.ps1
 ```
 
-Open [WorkoutAI](http://127.0.0.1:8080) and [API documentation](http://127.0.0.1:8000/docs).
+Open [Liftly](http://127.0.0.1:8080) and [API documentation](http://127.0.0.1:8000/docs).
 
 If the existing preview already occupies port 8080, use that preview or stop its serving terminal before starting another server.
 
@@ -79,6 +83,8 @@ For a static preview of the release build:
 ## Mobile targets
 
 Android and iOS platform projects have been regenerated. Their native builds have not been verified here; Android needs an installed Android SDK, and iOS needs macOS/Xcode.
+
+For a physical Android phone, use [USB reverse forwarding](android-quickstart.md#4-connect-the-phone-over-usb) to reach the existing localhost backend. The guide also covers optional Wi-Fi access.
 
 For an Android emulator, pass `--dart-define=API_BASE_URL=http://10.0.2.2:8000` to Flutter. Android's debug manifest permits the local HTTP development connection; release deployment should use HTTPS. The default localhost URL is suitable for the browser preview and an iOS simulator running on the backend's host. Physical phones need a reachable server address and platform network configuration; do not expose this unauthenticated prototype publicly.
 

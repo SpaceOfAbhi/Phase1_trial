@@ -1,11 +1,17 @@
-# Liftly
+# Liftly documentation
 
-A university prototype: Flutter displays workout recordings; a local Python API runs the supplied trained model and returns form predictions. Keep all project information in this repository, outside the owner's second-brain vaults.
+Liftly has two running parts: a Flutter application on the phone and a Python API on a computer. The API loads the already-trained model; the phone sends repetition data and displays the prediction. Nothing is trained when you use the app.
 
-- [Run the app](running.md)
-- [Understand inference and the input format](inference.md)
-- [Hardware requirements and remaining work](hardware.md)
-- [Liftly name and logo concepts](branding/README.md)
+## Read in this order
+
+| Guide | What it explains |
+| --- | --- |
+| **1. [Android quick start](android-quickstart.md)** | Clone the repository, start the backend, connect a phone and run the app. Includes troubleshooting and optional Wi-Fi access. |
+| **2. [Architecture](architecture.md)** | The diagram, where each component lives, a complete request journey and which files to change. |
+| **3. [Inference and API](inference.md)** | What the model predicts, input shape, preprocessing, parameter count and the JSON contract. |
+| **4. [Hardware integration](hardware.md)** | What is missing for live sensors, the shoe/model mismatch and work that remains. |
+| [Development and verification](running.md) | Browser development, local convenience scripts, test commands and verification limits. |
+| [Branding](branding/README.md) | Selected logo, Manrope wordmark, source assets and icon generation. |
 
 ## What works
 
@@ -24,21 +30,13 @@ The supplied model is for bicep curls with a wrist movement sensor and biceps/tr
 
 The supplied metadata reports approximately 89% accuracy on synthetic data. That does not establish accuracy with real people or shoe hardware. Model confidence is a class score, not a guarantee of correct or safe technique.
 
-## Main files
+## Working on the code
 
-| File | Responsibility |
-| --- | --- |
-| `backend/app.py` | API, validation, bundled recording access and startup |
-| `backend/inference.py` | Training-compatible preprocessing and saved-model prediction |
-| `backend/test_api.py` | Real inference, validation and preprocessing parity checks |
-| `ML/train.py` | Original training pipeline; running it starts training |
-| `ML/test.py` | Command-line demonstration using the shared inference implementation |
-| `ML/model_outputs/` | Model, feature scaler, label encoder and metadata used by the API |
-| `workout_ai/lib/services/api_service.dart` | Flutter HTTP connection |
-| `workout_ai/lib/services/analysis_provider.dart` | Sessions, inference requests and local history |
-| `workout_ai/lib/models/workout_models.dart` | App data and history serialization |
+The [architecture guide](architecture.md#repository-map) maps the main files and explains which part to change. Start frontend work in `workout_ai/lib/screens/`. Shared typography, colors and spacing live in `workout_ai/lib/theme/app_theme.dart`; cards and charts live in `workout_ai/lib/widgets/`.
 
 The frontend can be redesigned independently of the API and model. Keep the input/output contract in [inference.md](inference.md) when changing screens.
+
+History is stored on the phone/browser where it was created. There are no user accounts, cloud sync or backend history database.
 
 ## Layout direction
 

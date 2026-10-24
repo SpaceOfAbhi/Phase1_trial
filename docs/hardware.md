@@ -1,5 +1,7 @@
 # Hardware integration
 
+[Documentation index](README.md) · [Architecture](architecture.md) · [Inference and input format](inference.md)
+
 The supplied sensor configuration places an IMU near the wrist and muscle-signal electrodes on the biceps and triceps. The trained exercise is the bicep curl. A shoe-only device is not compatible with these assumptions merely because it also supplies movement data.
 
 ## Needed from the device owner
@@ -26,4 +28,4 @@ If the project must use shoe-only measurements, first agree on the exercise and 
 
 Workout history is stored on the current device/browser using the existing shared-preferences package. It includes chart data and source labels. It is suitable for this prototype, has no account synchronization, and can be lost when browser data is cleared. A failed save leaves the current session open for retry. Browser storage quotas may limit long histories; use a database/export if this becomes a real collection tool.
 
-The API is bound to localhost and has no authentication. Browser origins are restricted to localhost/127.0.0.1. Keep it local for the university demonstration; public hosting needs authentication, HTTPS, request-size/rate limits and a data-retention decision.
+By default the API is bound to localhost and has no authentication. Browser origins are restricted to localhost/127.0.0.1. USB port forwarding keeps that default; the [Android guide](android-quickstart.md) also describes an optional private Wi-Fi connection for the native app. Public hosting needs authentication, HTTPS, request-size/rate limits and a data-retention decision.

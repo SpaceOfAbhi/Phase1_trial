@@ -1,5 +1,7 @@
 # Inference for this model
 
+[Documentation index](README.md) · [Architecture](architecture.md) · [Android quick start](android-quickstart.md)
+
 Inference means using an already trained model to calculate an output from new input. Training adjusts the model's internal parameters; inference keeps them fixed.
 
 Here, **one example is one complete repetition**, containing many sensor readings over time. It is not one prediction per raw sensor sample.
