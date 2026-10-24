@@ -99,30 +99,20 @@ class _SessionCard extends StatelessWidget {
             : AppColors.error;
 
     return GlassCard(
-      padding: const EdgeInsets.all(AppSpacing.md),
+      padding: const EdgeInsets.all(20),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           // Header row
           Row(
             children: [
-              Container(
-                width: 46,
-                height: 46,
-                decoration: BoxDecoration(
-                  color: AppColors.primaryGlow,
-                  borderRadius: BorderRadius.circular(14),
-                ),
-                child: const Icon(Icons.fitness_center_rounded,
-                    color: AppColors.primary, size: 22),
-              ),
-              const SizedBox(width: AppSpacing.md),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(session.exercise,
                         style: theme.textTheme.headlineSmall),
+                    const SizedBox(height: 8),
                     Text(
                       _formatDate(session.startTime),
                       style: theme.textTheme.bodyMedium,
@@ -130,14 +120,15 @@ class _SessionCard extends StatelessWidget {
                   ],
                 ),
               ),
-              FormScoreRing(score: session.formScore, size: 72),
+              const SizedBox(width: 16),
+              FormScoreRing(score: session.formScore, size: 80),
             ],
           ),
-          const SizedBox(height: AppSpacing.md),
+          const SizedBox(height: AppSpacing.lg),
           // Stats row
           Wrap(
-            spacing: 8,
-            runSpacing: 8,
+            spacing: 12,
+            runSpacing: 12,
             children: [
               _StatChip(
                 icon: Icons.repeat_rounded,
@@ -168,28 +159,24 @@ class _SessionCard extends StatelessWidget {
           ],
           // Rep list
           if (session.repetitions.isNotEmpty) ...[
-            const SizedBox(height: AppSpacing.md),
-            SizedBox(
-              height: 52,
-              child: ListView.separated(
-                scrollDirection: Axis.horizontal,
-                itemCount: session.repetitions.length,
-                separatorBuilder: (_, __) => const SizedBox(width: 6),
-                itemBuilder: (context, i) {
-                  final rep = session.repetitions[i];
-                  return _RepChip(
-                    rep: rep,
-                    onTap: () => Navigator.of(context).push(
-                      MaterialPageRoute(
-                        builder: (_) => RepDetailScreen(
-                          rep: rep,
-                          sessionExercise: session.exercise,
-                        ),
+            const SizedBox(height: AppSpacing.lg),
+            Wrap(
+              spacing: 12,
+              runSpacing: 12,
+              children: List.generate(session.repetitions.length, (i) {
+                final rep = session.repetitions[i];
+                return _RepChip(
+                  rep: rep,
+                  onTap: () => Navigator.of(context).push(
+                    MaterialPageRoute(
+                      builder: (_) => RepDetailScreen(
+                        rep: rep,
+                        sessionExercise: session.exercise,
                       ),
                     ),
-                  );
-                },
-              ),
+                  ),
+                );
+              }),
             ),
           ],
         ],
@@ -240,7 +227,7 @@ class _StatChip extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
       decoration: BoxDecoration(
         color: AppColors.surfaceElevated,
         borderRadius: BorderRadius.circular(AppRadius.sm),
@@ -248,13 +235,12 @@ class _StatChip extends StatelessWidget {
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(icon, size: 13, color: color),
-          const SizedBox(width: 4),
+          Icon(icon, size: 16, color: color),
+          const SizedBox(width: 8),
           Text(
             '$value $label',
             style: theme.textTheme.labelSmall?.copyWith(
               color: color,
-              fontSize: 11,
               fontWeight: FontWeight.w600,
             ),
           ),
@@ -285,34 +271,31 @@ class _FormBreakdown extends StatelessWidget {
       children: [
         Text(
           'FORM BREAKDOWN',
-          style: theme.textTheme.labelSmall?.copyWith(letterSpacing: 1.2),
+          style: theme.textTheme.labelSmall,
         ),
-        const SizedBox(height: AppSpacing.sm),
+        const SizedBox(height: AppSpacing.md),
         ...counts.entries.map((e) {
           final color = _colorFor(e.key);
           final pct = e.value / repetitions.length;
           return Padding(
-            padding: const EdgeInsets.only(bottom: 6),
-            child: Row(
+            padding: const EdgeInsets.only(bottom: 16),
+            child: Column(
               children: [
-                SizedBox(
-                  width: 90,
-                  child: Text(
+                Row(children: [
+                  Expanded(
+                      child: Text(
                     e.key.friendlyName,
+                    style: theme.textTheme.bodyMedium,
+                  )),
+                  const SizedBox(width: 12),
+                  Text(
+                    '${e.value}x',
                     style: theme.textTheme.labelSmall
-                        ?.copyWith(color: color, fontSize: 11),
+                        ?.copyWith(color: color, fontWeight: FontWeight.w700),
                   ),
-                ),
-                Expanded(
-                  child:
-                      AnimatedProgressBar(value: pct, color: color, height: 6),
-                ),
-                const SizedBox(width: AppSpacing.sm),
-                Text(
-                  '${e.value}x',
-                  style: theme.textTheme.labelSmall
-                      ?.copyWith(color: color, fontWeight: FontWeight.w700),
-                ),
+                ]),
+                const SizedBox(height: 8),
+                AnimatedProgressBar(value: pct, color: color, height: 8),
               ],
             ),
           );
@@ -357,36 +340,35 @@ class _RepChip extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final color = _color();
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        width: 52,
-        height: 52,
-        decoration: BoxDecoration(
-          color: color.withValues(alpha: 0.15),
-          borderRadius: BorderRadius.circular(AppRadius.sm),
-          border: Border.all(color: color.withValues(alpha: 0.4), width: 1),
-        ),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Text(
-              '#${rep.repNumber}',
-              style: TextStyle(
-                fontSize: 11,
-                fontWeight: FontWeight.w700,
-                color: color,
-              ),
+    return TextButton(
+      onPressed: onTap,
+      style: TextButton.styleFrom(
+        foregroundColor: color,
+        backgroundColor: color.withValues(alpha: 0.12),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+        minimumSize: const Size(72, 64),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      ),
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Text(
+            '#${rep.repNumber}',
+            style: TextStyle(
+              fontSize: 15,
+              fontWeight: FontWeight.w600,
+              color: color,
             ),
-            Text(
-              '${(rep.prediction.confidence * 100).toStringAsFixed(0)}%',
-              style: TextStyle(
-                fontSize: 9,
-                color: color.withValues(alpha: 0.8),
-              ),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            '${(rep.prediction.confidence * 100).toStringAsFixed(0)}%',
+            style: TextStyle(
+              fontSize: 13,
+              color: AppColors.textSecondary,
             ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }

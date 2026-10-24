@@ -43,3 +43,11 @@ flutter:
 
   assets:
     - assets/data/
+    - assets/branding/
+    - assets/fonts/Manrope-OFL.txt
+
+  fonts:
+    - family: Manrope
+      fonts:
+        - asset: assets/fonts/Manrope-Variable.ttf
+          weight: 700

@@ -61,6 +61,8 @@ class _RepDetailScreenState extends State<RepDetailScreen>
     return Scaffold(
       backgroundColor: AppColors.background,
       appBar: AppBar(
+        toolbarHeight:
+            80 + (MediaQuery.textScalerOf(context).scale(13) - 13) * 8,
         backgroundColor: AppColors.background,
         title: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -98,33 +100,31 @@ class _RepDetailScreenState extends State<RepDetailScreen>
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Row(
+                  Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              'CLASSIFICATION RESULT',
-                              style: theme.textTheme.labelSmall
-                                  ?.copyWith(letterSpacing: 1.2),
-                            ),
-                            const SizedBox(height: AppSpacing.sm),
-                            FormClassBadge(
-                              label: pred.predictedClass.friendlyName,
-                              color: color,
-                              large: true,
-                            ),
-                            const SizedBox(height: AppSpacing.sm),
-                            Text(
-                              pred.predictedClass.description,
-                              style: theme.textTheme.bodyMedium,
-                            ),
-                          ],
-                        ),
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'CLASSIFICATION RESULT',
+                            style: theme.textTheme.labelSmall
+                                ?.copyWith(letterSpacing: 1.2),
+                          ),
+                          const SizedBox(height: AppSpacing.sm),
+                          FormClassBadge(
+                            label: pred.predictedClass.friendlyName,
+                            color: color,
+                            large: true,
+                          ),
+                          const SizedBox(height: AppSpacing.sm),
+                          Text(
+                            pred.predictedClass.description,
+                            style: theme.textTheme.bodyMedium,
+                          ),
+                        ],
                       ),
-                      const SizedBox(width: AppSpacing.md),
+                      const SizedBox(height: AppSpacing.md),
                       // Confidence circle
                       _ConfidenceCircle(
                         value: pred.confidence,
@@ -132,6 +132,7 @@ class _RepDetailScreenState extends State<RepDetailScreen>
                       ),
                     ],
                   ),
+                  const SizedBox(height: AppSpacing.md),
                   Text(pred.sourceLabel, style: theme.textTheme.bodyMedium),
                   if (pred.expectedLabel != null)
                     Text('Dataset label: ${pred.expectedLabel}',
@@ -157,7 +158,7 @@ class _RepDetailScreenState extends State<RepDetailScreen>
                             'Not real CNN-LSTM inference.',
                             style: theme.textTheme.labelSmall?.copyWith(
                               color: AppColors.demoChip,
-                              fontSize: 10,
+                              fontSize: 13,
                             ),
                           )),
                         ],
@@ -206,6 +207,9 @@ class _RepDetailScreenState extends State<RepDetailScreen>
                   color: AppColors.surface,
                   borderRadius: BorderRadius.circular(20)),
               child: TabBar(
+                isScrollable: true,
+                tabAlignment: TabAlignment.start,
+                labelPadding: const EdgeInsets.symmetric(horizontal: 20),
                 controller: _tabController,
                 labelColor: AppColors.background,
                 unselectedLabelColor: AppColors.textMuted,
@@ -216,7 +220,7 @@ class _RepDetailScreenState extends State<RepDetailScreen>
                     borderRadius: BorderRadius.circular(100)),
                 dividerColor: Colors.transparent,
                 labelStyle: const TextStyle(
-                  fontSize: 12,
+                  fontSize: 13,
                   fontWeight: FontWeight.w600,
                 ),
                 tabs: const [
@@ -227,7 +231,8 @@ class _RepDetailScreenState extends State<RepDetailScreen>
               ),
             ),
             SizedBox(
-              height: 280,
+              height:
+                  360 + (MediaQuery.textScalerOf(context).scale(13) - 13) * 12,
               child: TabBarView(
                 controller: _tabController,
                 children: [
@@ -297,8 +302,8 @@ class _ConfidenceCircle extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     return Container(
-      width: 80 * MediaQuery.textScalerOf(context).scale(12) / 12,
-      height: 80 * MediaQuery.textScalerOf(context).scale(12) / 12,
+      width: 104 * MediaQuery.textScalerOf(context).scale(13) / 13,
+      height: 104 * MediaQuery.textScalerOf(context).scale(13) / 13,
       decoration: BoxDecoration(
         shape: BoxShape.circle,
         color: color.withValues(alpha: 0.12),
@@ -317,7 +322,7 @@ class _ConfidenceCircle extends StatelessWidget {
           ),
           Text(
             'confidence',
-            style: theme.textTheme.labelSmall?.copyWith(fontSize: 9),
+            style: theme.textTheme.labelSmall?.copyWith(fontSize: 13),
           ),
         ],
       ),
@@ -352,60 +357,48 @@ class _SignalStatsCard extends StatelessWidget {
         children: [
           Text(title, style: theme.textTheme.titleMedium),
           const SizedBox(height: AppSpacing.sm),
-          Table(
-            columnWidths: const {
-              0: FlexColumnWidth(2),
-              1: FlexColumnWidth(1),
-              2: FlexColumnWidth(1),
-              3: FlexColumnWidth(1),
-            },
-            children: [
-              TableRow(
-                decoration: const BoxDecoration(
-                  border: Border(
-                    bottom: BorderSide(color: AppColors.divider, width: 0.5),
-                  ),
-                ),
-                children: ['Axis', 'Min', 'Max', 'Mean']
-                    .map(
-                      (h) => Padding(
-                        padding: const EdgeInsets.symmetric(vertical: 4),
-                        child: Text(
-                          h,
-                          style: theme.textTheme.labelSmall
-                              ?.copyWith(color: AppColors.textMuted),
-                        ),
-                      ),
-                    )
-                    .toList(),
-              ),
-              ...List.generate(3, (i) {
-                final v = values[i];
-                if (v.isEmpty) return const TableRow(children: []);
-                final mn = v.reduce((a, b) => a < b ? a : b);
-                final mx = v.reduce((a, b) => a > b ? a : b);
-                final mean = v.fold(0.0, (a, b) => a + b) / v.length;
-                return TableRow(
+          ...List.generate(3, (i) {
+            final v = values[i];
+            if (v.isEmpty) return const SizedBox.shrink();
+            final stats = [
+              v.reduce((a, b) => a < b ? a : b),
+              v.reduce((a, b) => a > b ? a : b),
+              v.fold(0.0, (a, b) => a + b) / v.length,
+            ];
+            return Padding(
+              padding: const EdgeInsets.symmetric(vertical: 16),
+              child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Padding(
-                      padding: const EdgeInsets.symmetric(vertical: 4),
-                      child: Text(
-                        axes[i].toUpperCase(),
+                    Text(axes[i].toUpperCase(),
                         style: theme.textTheme.labelSmall
-                            ?.copyWith(color: AppColors.primary),
-                      ),
-                    ),
-                    Text(mn.toStringAsFixed(2),
-                        style: theme.textTheme.bodyMedium),
-                    Text(mx.toStringAsFixed(2),
-                        style: theme.textTheme.bodyMedium),
-                    Text(mean.toStringAsFixed(2),
-                        style: theme.textTheme.bodyMedium),
-                  ],
-                );
-              }),
-            ],
-          ),
+                            ?.copyWith(color: AppColors.primary)),
+                    const SizedBox(height: 12),
+                    Row(
+                        children: List.generate(
+                            3,
+                            (j) => Expanded(
+                                  child: Column(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
+                                      children: [
+                                        Text(['Min', 'Max', 'Mean'][j],
+                                            style: theme.textTheme.labelSmall),
+                                        const SizedBox(height: 6),
+                                        Text(stats[j].toStringAsFixed(2),
+                                            style: theme.textTheme.bodyMedium
+                                                ?.copyWith(
+                                                    color:
+                                                        AppColors.textPrimary)),
+                                      ]),
+                                ))),
+                    if (i < 2)
+                      const Padding(
+                          padding: EdgeInsets.only(top: 16),
+                          child: Divider(height: 1)),
+                  ]),
+            );
+          }),
         ],
       ),
     );

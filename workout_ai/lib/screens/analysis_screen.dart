@@ -362,7 +362,7 @@ class _InfoPill extends StatelessWidget {
             label,
             style: Theme.of(context).textTheme.labelSmall?.copyWith(
                   color: AppColors.textSecondary,
-                  fontSize: 12,
+                  fontSize: 13,
                 ),
           ),
         ],
@@ -409,6 +409,9 @@ class _AnalysisActiveView extends StatelessWidget {
                 color: AppColors.surface,
                 borderRadius: BorderRadius.circular(20)),
             child: TabBar(
+              isScrollable: true,
+              tabAlignment: TabAlignment.start,
+              labelPadding: const EdgeInsets.symmetric(horizontal: 20),
               controller: tabController,
               labelColor: AppColors.background,
               unselectedLabelColor: AppColors.textMuted,
@@ -419,7 +422,7 @@ class _AnalysisActiveView extends StatelessWidget {
                   borderRadius: BorderRadius.circular(100)),
               dividerColor: Colors.transparent,
               labelStyle: const TextStyle(
-                fontSize: 12,
+                fontSize: 14,
                 fontWeight: FontWeight.w600,
               ),
               tabs: const [
@@ -431,7 +434,8 @@ class _AnalysisActiveView extends StatelessWidget {
           ),
           // Signal charts
           SizedBox(
-            height: 280,
+            height:
+                360 + (MediaQuery.textScalerOf(context).scale(13) - 13) * 12,
             child: TabBarView(
               controller: tabController,
               children: [
@@ -571,7 +575,7 @@ class _PredictionCard extends StatelessWidget {
           Text(
             cls.description,
             style: theme.textTheme.bodyMedium?.copyWith(
-              fontSize: 12,
+              fontSize: 13,
               color: AppColors.textSecondary,
             ),
           ),

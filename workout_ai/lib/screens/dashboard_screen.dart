@@ -181,19 +181,16 @@ class _DashboardAppBar extends StatelessWidget {
           child: Padding(
             padding: const EdgeInsets.fromLTRB(16, 24, 16, 8),
             child: Row(children: [
-              Container(
-                  width: 40,
-                  height: 40,
-                  decoration: const BoxDecoration(
-                      color: AppColors.primary, shape: BoxShape.circle),
-                  child: const Icon(Icons.psychology_alt_rounded,
-                      size: 24, color: AppColors.background)),
+              Image.asset('assets/branding/liftly-mark.png',
+                  width: 40, height: 40, excludeFromSemantics: true),
               const SizedBox(width: 12),
               Expanded(
                   child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                    Text('Liftly', style: theme.textTheme.displayMedium),
+                    Text('Liftly',
+                        style: theme.textTheme.displayMedium?.copyWith(
+                            fontFamily: 'Manrope', letterSpacing: -0.5)),
                     const SizedBox(height: 4),
                     Text('CNN-LSTM Form Analyser',
                         style: theme.textTheme.bodyMedium),
@@ -506,32 +503,6 @@ class _ModelInfoCard extends StatelessWidget {
               value: '${meta.numFeatures} (6 IMU + 2 EMG)'),
           _InfoRow(label: 'Classes', value: '4 form categories'),
           _InfoRow(label: 'Sampling Rate', value: '${meta.samplingRateHz} Hz'),
-          const SizedBox(height: AppSpacing.sm),
-          Container(
-            padding: const EdgeInsets.symmetric(
-                horizontal: AppSpacing.sm, vertical: 6),
-            decoration: BoxDecoration(
-              color: AppColors.warningGlow,
-              borderRadius: BorderRadius.circular(AppRadius.sm),
-              border: Border.all(color: AppColors.warning, width: 0.6),
-            ),
-            child: Row(
-              children: [
-                const Icon(Icons.warning_amber_rounded,
-                    size: 14, color: AppColors.warning),
-                const SizedBox(width: 6),
-                Expanded(
-                  child: Text(
-                    'Trained on SYNTHETIC data. Results may differ on real sensor data.',
-                    style: theme.textTheme.labelSmall?.copyWith(
-                      color: AppColors.warning,
-                      fontSize: 10,
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
         ],
       ),
     );

@@ -63,12 +63,20 @@ class AppTheme {
       headlineSmall: text.copyWith(fontSize: 19, fontWeight: FontWeight.w600),
       titleLarge: text.copyWith(fontSize: 19, fontWeight: FontWeight.w600),
       titleMedium: text.copyWith(fontSize: 16, fontWeight: FontWeight.w600),
-      bodyLarge: text.copyWith(fontSize: 16, height: 1.45),
+      bodyLarge:
+          text.copyWith(fontSize: 17, height: 1.5, fontWeight: FontWeight.w400),
       bodyMedium: text.copyWith(
-          fontSize: 14, color: AppColors.textSecondary, height: 1.45),
+          fontSize: 15,
+          color: AppColors.textSecondary,
+          height: 1.5,
+          fontWeight: FontWeight.w400),
       labelLarge: text.copyWith(fontSize: 16, fontWeight: FontWeight.w600),
       labelSmall: text.copyWith(
-          fontSize: 12, color: AppColors.textMuted, letterSpacing: 0),
+          fontSize: 13,
+          color: AppColors.textSecondary,
+          letterSpacing: 0.1,
+          height: 1.4,
+          fontWeight: FontWeight.w500),
     );
     return base.copyWith(
       scaffoldBackgroundColor: AppColors.background,

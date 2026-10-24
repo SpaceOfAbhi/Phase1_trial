@@ -131,7 +131,7 @@ class _DemoBanner extends StatelessWidget {
                 'Shoe hardware is not connected.',
                 style: theme.textTheme.bodyMedium?.copyWith(
                   color: AppColors.warning,
-                  fontSize: 12,
+                  fontSize: 13,
                 ),
               ),
             ),
@@ -158,7 +158,7 @@ class _DemoBanner extends StatelessWidget {
               'Predictions are MOCK – not real CNN-LSTM inference.',
               style: theme.textTheme.bodyMedium?.copyWith(
                 color: AppColors.demoChip,
-                fontSize: 12,
+                fontSize: 13,
               ),
             ),
           ),
@@ -218,18 +218,19 @@ class _ExerciseCard extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Row(
+                Wrap(
+                  spacing: 8,
+                  runSpacing: 8,
+                  crossAxisAlignment: WrapCrossAlignment.center,
                   children: [
-                    Flexible(
-                        child: Text(
+                    Text(
                       name,
                       style: theme.textTheme.headlineSmall?.copyWith(
                         color: isAvailable
                             ? AppColors.textPrimary
                             : AppColors.textMuted,
                       ),
-                    )),
-                    const SizedBox(width: AppSpacing.sm),
+                    ),
                     if (!isAvailable)
                       Container(
                         padding: const EdgeInsets.symmetric(
@@ -241,7 +242,7 @@ class _ExerciseCard extends StatelessWidget {
                         child: Text(
                           'SOON',
                           style: theme.textTheme.labelSmall?.copyWith(
-                            fontSize: 9,
+                            fontSize: 13,
                             color: AppColors.textMuted,
                           ),
                         ),
@@ -252,13 +253,13 @@ class _ExerciseCard extends StatelessWidget {
                   muscleGroup,
                   style: theme.textTheme.labelSmall?.copyWith(
                     color: accentColor,
-                    fontSize: 11,
+                    fontSize: 13,
                   ),
                 ),
                 const SizedBox(height: AppSpacing.xs),
                 Text(
                   description,
-                  style: theme.textTheme.bodyMedium?.copyWith(fontSize: 12),
+                  style: theme.textTheme.bodyMedium,
                 ),
               ],
             ),

@@ -10,7 +10,16 @@ Logo concepts, generated with the built-in imagegen tool:
 - **02 / Rep loop:** a rounded L loop suggesting repeated movement.
 - **03 / Signal:** rounded segments connecting the brand to sensor data.
 
-These are visual references. A final logo has not been selected or installed as the launcher icon. Name, domain and trademark availability have not been checked.
+The owner selected **01 / Uplift**. The app header, Android/iOS launcher icons, web icons and favicon now use a flat rendition of this mark in the app's lime (#D5FF63). Android includes adaptive and monochrome icon resources with space for launcher masks.
+
+The Liftly wordmark uses **Manrope Bold**, bundled locally with its SIL Open Font License. Other headings retain their existing styles; body text uses the platform font at 15–17px with 1.5 line spacing, and chart/metadata labels use 13px with more contrast. This follows the supplied [Apple typography guidance](https://developer.apple.com/design/human-interface-guidelines/typography) on hierarchy, readable weights and larger text, adapted for Android. The app does not embed Apple's system fonts.
+
+- [Scalable logo source](liftly-mark.svg)
+- [App icon preview](liftly-app-icon.png)
+- [Regenerate icon sizes on Windows](render-icons.ps1) using built-in System.Drawing; no extra package required.
+- [Manrope font source](https://github.com/google/fonts/tree/main/ofl/manrope)
+
+Name, domain and trademark availability have not been checked.
 
 ## Generation prompt
 

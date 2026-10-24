@@ -17,7 +17,7 @@ class SignalChart extends StatelessWidget {
     required this.series,
     required this.colors,
     required this.legendLabels,
-    this.height = 140,
+    this.height = 180,
     this.minY,
     this.maxY,
   });
@@ -33,6 +33,7 @@ class SignalChart extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final labelSize = MediaQuery.textScalerOf(context).scale(13);
 
     final maxLen =
         series.fold<int>(0, (prev, s) => s.length > prev ? s.length : prev);
@@ -81,13 +82,14 @@ class SignalChart extends StatelessWidget {
     if (minY == null || maxY == null) {
       for (final s in series) {
         for (final v in s) {
-          if (v < computedMin) computedMin = v;
-          if (v > computedMax) computedMax = v;
+          if (minY == null && v < computedMin) computedMin = v;
+          if (maxY == null && v > computedMax) computedMax = v;
         }
       }
-      final pad = (computedMax - computedMin) * 0.15;
-      computedMin -= pad;
-      computedMax += pad;
+      final range = computedMax - computedMin;
+      final pad = range == 0 ? 1.0 : range * 0.15;
+      if (minY == null) computedMin -= pad;
+      if (maxY == null) computedMax += pad;
     }
 
     return GlassCard(
@@ -95,18 +97,19 @@ class SignalChart extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         // Title + legend
-        Row(
+        Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Expanded(
-              child: Text(
-                title,
-                style: theme.textTheme.titleMedium?.copyWith(
-                  color: AppColors.textPrimary,
-                ),
+            Text(
+              title,
+              style: theme.textTheme.titleMedium?.copyWith(
+                color: AppColors.textPrimary,
               ),
             ),
+            const SizedBox(height: 12),
             Wrap(
-              spacing: AppSpacing.sm,
+              spacing: 16,
+              runSpacing: 12,
               children: List.generate(
                 legendLabels.length,
                 (i) => Row(
@@ -120,12 +123,11 @@ class SignalChart extends StatelessWidget {
                         shape: BoxShape.circle,
                       ),
                     ),
-                    const SizedBox(width: 3),
+                    const SizedBox(width: 6),
                     Text(
                       legendLabels[i],
                       style: theme.textTheme.labelSmall?.copyWith(
                         color: AppColors.textSecondary,
-                        fontSize: 12,
                       ),
                     ),
                   ],
@@ -134,19 +136,21 @@ class SignalChart extends StatelessWidget {
             ),
           ],
         ),
-        const SizedBox(height: AppSpacing.sm),
+        const SizedBox(height: 24),
         SizedBox(
-          height: height,
+          height: height + (labelSize - 13) * 4,
           child: LineChart(
             LineChartData(
               lineBarsData: lineBarsData,
+              minX: 0,
+              maxX: (maxLen > 1 ? maxLen - 1 : 1).toDouble(),
               minY: computedMin,
               maxY: computedMax,
               clipData: const FlClipData.all(),
               gridData: FlGridData(
                 show: true,
                 drawVerticalLine: false,
-                horizontalInterval: (computedMax - computedMin) / 4,
+                horizontalInterval: (computedMax - computedMin) / 3,
                 getDrawingHorizontalLine: (_) => FlLine(
                   color: AppColors.border.withValues(alpha: 0.4),
                   strokeWidth: 0.7,
@@ -157,28 +161,39 @@ class SignalChart extends StatelessWidget {
                 leftTitles: AxisTitles(
                   sideTitles: SideTitles(
                     showTitles: true,
-                    reservedSize: 38,
-                    interval: (computedMax - computedMin) / 4,
+                    reservedSize: labelSize * 4.5,
+                    interval: (computedMax - computedMin) / 3,
                     getTitlesWidget: (val, meta) {
-                      return Text(
-                        val.toStringAsFixed(1),
-                        style: theme.textTheme.labelSmall?.copyWith(
-                            fontSize: 11, color: AppColors.textMuted),
-                      );
+                      if (val == meta.min || val == meta.max)
+                        return const SizedBox.shrink();
+                      return SideTitleWidget(
+                          axisSide: meta.axisSide,
+                          space: 12,
+                          child: Text(
+                            val.toStringAsFixed(1),
+                            style: theme.textTheme.labelSmall
+                                ?.copyWith(color: AppColors.textSecondary),
+                          ));
                     },
                   ),
                 ),
                 bottomTitles: AxisTitles(
                   sideTitles: SideTitles(
                     showTitles: true,
-                    reservedSize: 22,
-                    interval: (maxLen / 4).ceil().toDouble(),
+                    reservedSize: labelSize * 2.5,
+                    interval:
+                        ((maxLen - 1) / 2).ceil().clamp(1, maxLen).toDouble(),
                     getTitlesWidget: (val, meta) {
-                      return Text(
-                        val.toInt().toString(),
-                        style: theme.textTheme.labelSmall?.copyWith(
-                            fontSize: 11, color: AppColors.textMuted),
-                      );
+                      return SideTitleWidget(
+                          axisSide: meta.axisSide,
+                          space: 10,
+                          fitInside: SideTitleFitInsideData.fromTitleMeta(meta,
+                              distanceFromEdge: 0),
+                          child: Text(
+                            val.toInt().toString(),
+                            style: theme.textTheme.labelSmall
+                                ?.copyWith(color: AppColors.textSecondary),
+                          ));
                     },
                   ),
                 ),
@@ -196,6 +211,8 @@ class SignalChart extends StatelessWidget {
               ),
               lineTouchData: LineTouchData(
                 touchTooltipData: LineTouchTooltipData(
+                  fitInsideHorizontally: true,
+                  fitInsideVertically: true,
                   getTooltipColor: (_) => AppColors.surfaceHighest,
                   getTooltipItems: (touchedSpots) {
                     return touchedSpots.map((spot) {
@@ -205,7 +222,7 @@ class SignalChart extends StatelessWidget {
                         '$label: ${spot.y.toStringAsFixed(2)}',
                         TextStyle(
                           color: colors[spot.barIndex % colors.length],
-                          fontSize: 11,
+                          fontSize: 13,
                           fontWeight: FontWeight.w600,
                         ),
                       );
@@ -333,34 +350,33 @@ class FormScoreRing extends StatelessWidget {
     return Semantics(
       label: 'Form Score',
       value: '${score.toStringAsFixed(0)}%',
-      child: SizedBox(
-          width: size,
-          height: size,
-          child: Stack(
-            alignment: Alignment.center,
-            children: [
-              Positioned.fill(
-                  child: Padding(
-                padding: const EdgeInsets.all(8),
-                child: CircularProgressIndicator(
-                    value: pct.clamp(0, 1),
-                    strokeWidth: size * 0.12,
-                    strokeCap: StrokeCap.round,
-                    backgroundColor: color.withValues(alpha: 0.16),
-                    color: color),
-              )),
-              Column(mainAxisSize: MainAxisSize.min, children: [
+      child: Column(mainAxisSize: MainAxisSize.min, children: [
+        SizedBox(
+            width: size,
+            height: size,
+            child: Stack(
+              alignment: Alignment.center,
+              children: [
+                Positioned.fill(
+                    child: Padding(
+                  padding: const EdgeInsets.all(8),
+                  child: CircularProgressIndicator(
+                      value: pct.clamp(0, 1),
+                      strokeWidth: size * 0.12,
+                      strokeCap: StrokeCap.round,
+                      backgroundColor: color.withValues(alpha: 0.16),
+                      color: color),
+                )),
                 Text('${score.toStringAsFixed(0)}%',
                     style: theme.textTheme.headlineMedium?.copyWith(
                         color: AppColors.textPrimary,
                         fontSize: size > 100 ? 26 : 16,
                         fontWeight: FontWeight.w600)),
-                Text('Form Score',
-                    style: theme.textTheme.labelSmall
-                        ?.copyWith(fontSize: size > 100 ? 10 : 8)),
-              ]),
-            ],
-          )),
+              ],
+            )),
+        const SizedBox(height: 8),
+        Text('Form Score', style: theme.textTheme.labelSmall),
+      ]),
     );
   }
 }
@@ -397,39 +413,29 @@ class ProbabilityBars extends StatelessWidget {
       children: List.generate(4, (i) {
         final prob = i < probabilities.length ? probabilities[i] : 0.0;
         return Padding(
-          padding: const EdgeInsets.only(bottom: AppSpacing.sm),
-          child: Row(
+          padding: const EdgeInsets.only(bottom: 20),
+          child: Column(
             children: [
-              SizedBox(
-                width: 110,
-                child: Text(
-                  _labels[i],
-                  style: theme.textTheme.labelSmall?.copyWith(
-                    color: AppColors.textSecondary,
-                    fontSize: 11,
+              Row(children: [
+                Expanded(
+                  child: Text(
+                    _labels[i],
+                    style: theme.textTheme.labelSmall?.copyWith(
+                      color: AppColors.textSecondary,
+                    ),
                   ),
                 ),
-              ),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.end,
-                  children: [
-                    AnimatedProgressBar(
-                      value: prob,
-                      color: _colors[i],
-                      height: 8,
-                    ),
-                    const SizedBox(height: 2),
-                    Text(
-                      '${(prob * 100).toStringAsFixed(1)}%',
-                      style: theme.textTheme.labelSmall?.copyWith(
-                        color: _colors[i],
-                        fontSize: 12,
-                      ),
-                    ),
-                  ],
+                const SizedBox(width: 12),
+                Text(
+                  '${(prob * 100).toStringAsFixed(1)}%',
+                  style: theme.textTheme.labelSmall?.copyWith(
+                    color: _colors[i],
+                    fontWeight: FontWeight.w600,
+                  ),
                 ),
-              ),
+              ]),
+              const SizedBox(height: 10),
+              AnimatedProgressBar(value: prob, color: _colors[i], height: 8),
             ],
           ),
         );

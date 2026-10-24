@@ -168,10 +168,10 @@ class DemoBadge extends StatelessWidget {
           Text(
             'MOCK DATA',
             style: TextStyle(
-              fontSize: small ? 9 : 10,
+              fontSize: small ? 12 : 13,
               fontWeight: FontWeight.w700,
               color: AppColors.demoChip,
-              letterSpacing: 0.8,
+              letterSpacing: 0.3,
             ),
           ),
         ],
@@ -274,7 +274,7 @@ class FormClassBadge extends StatelessWidget {
           fontSize: large ? 15 : 12,
           fontWeight: FontWeight.w700,
           color: color,
-          letterSpacing: 0.5,
+          letterSpacing: 0,
         ),
       ),
     );

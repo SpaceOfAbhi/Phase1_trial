@@ -12,7 +12,7 @@ Flutter SDK and new package caches are on D:, not C:. Missing web/Android/iOS pl
 
 ## Verification
 
-Three backend tests and three Flutter tests passed. A release web build succeeded. The shared CLI predicted GOOD for S01-1-1 with a 99.25% class score. Browser testing verified two real predictions, session saving and restoration after reload. Analyzer has existing style/deprecation findings, without compile errors. Checks are described in docs/running.md.
+Three backend tests and six Flutter tests passed. A release web build succeeded. The shared CLI predicted GOOD for S01-1-1 with a 99.25% class score. Browser testing verified two real predictions, session saving and restoration after reload. Analyzer has existing style/deprecation findings, without compile errors. Checks are described in docs/running.md.
 
 ## Next
 
@@ -22,7 +22,7 @@ Frontend design can change independently of inference/API. No authentication, cl
 
 ## UI redesign
 
-Shared UI now uses black backgrounds, charcoal rounded surfaces, neutral system typography, lime selection accents, white pill actions, quieter charts and floating navigation. Dashboard, exercise selection, analysis, history and repetition details remain the same screens with the same content. No backend, model or session behavior was changed for the redesign. Desktop content is capped at 720px; phone layouts were visually checked at 390px. The shared primary button now uses Flutter's native filled button for keyboard/focus support.
+Shared UI now uses black backgrounds, charcoal rounded surfaces, neutral system typography, lime selection accents, white pill actions, quieter charts and docked navigation. Dashboard, exercise selection, analysis, history and repetition details remain the same screens with the same content. No backend, model or session behavior was changed for the redesign. Desktop content is capped at 720px; phone layouts were visually checked at 390px. The shared primary button now uses Flutter's native filled button for keyboard/focus support.
 
 Android layout refinement: 16px page margins, 20px main-card padding, 12px related-item gaps and 24px section spacing. Stats use two columns plus a full-width score card. Navigation is docked and respects device insets instead of overlapping content. Typography uses the platform default, icon targets are at least 48px, and large text can stack controls. Active predictions scroll above the persistent action area. Reduced motion disables decorative pulsing/bar animation.
 
@@ -30,7 +30,9 @@ Validation: five Flutter tests (including all screens at 360px with 1.0 and 1.6 
 
 Publishing: main was pushed to SpaceOfAbhi/Phase1_trial on GitHub. raw_emg.csv uses Git LFS; the original unpublished history is preserved locally on backup-before-lfs-20261024 (do not push that backup branch). Generated Flutter caches and machine-specific configuration stay local and excluded from version control.
 
-Branding: the owner selected Liftly. Updated visible app names on the dashboard, web and mobile platforms, keeping package IDs and saved history intact. docs/branding contains a generated logo exploration board and its prompt; Uplift is recommended. No final logo was selected or installed. Name/trademark availability is unchecked.
+Branding: the owner selected Liftly and logo 01 / Uplift. The app header and web/Android/iOS icons now use the flat lime mark. SVG source, icon preview and a repeatable Windows renderer live in docs/branding. Android includes adaptive and monochrome layers. The wordmark uses bundled Manrope Bold with its license; other headings keep their existing styles. Package IDs and saved history stay intact. Name/trademark availability is unchecked.
+
+Readability: body text is now 15–17px with 1.5 line spacing; small labels are generally 13px. History form labels/counts sit above their bars, and rep buttons wrap with larger tap targets. Signal charts separate titles from wrapping legends, use fewer ticks with scaled margins and have more height. Probability bars and statistics have more label space; signal tabs scroll horizontally. Flat/single-sample chart axes are handled. Six Flutter tests cover all five screens at 360px with normal/1.6 text, every history form label, the EMG tab and a flat signal. Browser checks verified history cards, EMG legends and statistics at 360px; screenshots are in docs/screenshots. Native launcher rendering still needs a device check. The owner requested removal of the synthetic-training label from the dashboard; the label is removed, while documentation and prediction-source labels remain accurate.
 
 ## Setup issues resolved
 
