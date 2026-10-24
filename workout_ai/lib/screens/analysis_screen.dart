@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../models/workout_models.dart';
@@ -40,10 +41,11 @@ class _AnalysisScreenState extends State<AnalysisScreen>
 
     return WillPopScope(
       onWillPop: () async {
+        if (provider.isBusy) return false;
         if (provider.isAnalysing) {
           final confirmed = await _confirmExit(context);
-          if (confirmed) provider.stopSession();
-          return confirmed;
+          if (confirmed) await provider.stopSession();
+          return confirmed && !provider.isAnalysing;
         }
         return true;
       },
@@ -61,14 +63,28 @@ class _AnalysisScreenState extends State<AnalysisScreen>
       BuildContext context, AnalysisProvider provider, ThemeData theme) {
     return AppBar(
       backgroundColor: AppColors.background,
+      toolbarHeight: 80 * MediaQuery.textScalerOf(context).scale(14) / 14,
+      bottom: provider.isDemoMode
+          ? PreferredSize(
+              preferredSize: Size.fromHeight(
+                  36 * MediaQuery.textScalerOf(context).scale(14) / 14),
+              child: const Padding(
+                  padding: EdgeInsets.fromLTRB(16, 0, 16, 8),
+                  child: Align(
+                      alignment: Alignment.centerLeft,
+                      child: DemoBadge(small: true))),
+            )
+          : null,
       leading: IconButton(
         icon: const Icon(Icons.arrow_back_rounded),
         onPressed: () async {
+          if (provider.isBusy) return;
           if (provider.isAnalysing) {
             final confirmed = await _confirmExit(context);
             if (confirmed) {
-              provider.stopSession();
-              if (context.mounted) Navigator.of(context).pop();
+              await provider.stopSession();
+              if (context.mounted && !provider.isAnalysing)
+                Navigator.of(context).pop();
             }
           } else {
             Navigator.of(context).pop();
@@ -78,33 +94,29 @@ class _AnalysisScreenState extends State<AnalysisScreen>
       title: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(
+          Wrap(
+            spacing: 8,
+            runSpacing: 4,
             children: [
               Text(provider.selectedExercise,
                   style: theme.textTheme.headlineMedium),
-              if (provider.isDemoMode) ...[
-                const SizedBox(width: AppSpacing.sm),
-                const DemoBadge(small: true),
-              ],
             ],
           ),
           if (provider.isAnalysing)
             Row(
               children: [
                 PulsingDot(
-                  color: provider.isPaused
-                      ? AppColors.warning
-                      : AppColors.good,
+                  color: provider.isPaused ? AppColors.warning : AppColors.good,
                 ),
                 const SizedBox(width: 5),
-                Text(
-                  provider.isPaused ? 'Paused' : 'Recording',
+                Expanded(
+                    child: Text(
+                  provider.isPaused ? 'Paused' : 'Session active',
                   style: theme.textTheme.labelSmall?.copyWith(
-                    color: provider.isPaused
-                        ? AppColors.warning
-                        : AppColors.good,
+                    color:
+                        provider.isPaused ? AppColors.warning : AppColors.good,
                   ),
-                ),
+                )),
               ],
             ),
         ],
@@ -116,17 +128,19 @@ class _AnalysisScreenState extends State<AnalysisScreen>
                 ? Icons.play_arrow_rounded
                 : Icons.pause_rounded),
             color: AppColors.warning,
-            onPressed: provider.pauseResume,
+            onPressed: provider.isBusy ? null : provider.pauseResume,
             tooltip: provider.isPaused ? 'Resume' : 'Pause',
           ),
           IconButton(
             icon: const Icon(Icons.stop_rounded),
             color: AppColors.error,
             onPressed: () async {
+              if (provider.isBusy) return;
               final confirmed = await _confirmExit(context);
               if (confirmed) {
-                provider.stopSession();
-                if (context.mounted) Navigator.of(context).pop();
+                await provider.stopSession();
+                if (context.mounted && !provider.isAnalysing)
+                  Navigator.of(context).pop();
               }
             },
             tooltip: 'Stop session',
@@ -174,7 +188,8 @@ class _AnalysisIdleView extends StatelessWidget {
     final provider = context.read<AnalysisProvider>();
     final theme = Theme.of(context);
 
-    return Padding(
+    return SingleChildScrollView(
+        child: Padding(
       padding: const EdgeInsets.all(AppSpacing.md),
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
@@ -202,8 +217,8 @@ class _AnalysisIdleView extends StatelessWidget {
           const SizedBox(height: AppSpacing.sm),
           Text(
             provider.isDemoMode
-                ? 'Demo mode: synthetic sensor data from the training dataset will be replayed. Predictions are MOCK.'
-                : 'Connect your IMU + EMG sensors and start the FastAPI backend before recording.',
+                ? 'Offline preview: generated signals and mock predictions.'
+                : 'Analyze recorded bicep curls with the trained model. Bundled recordings are synthetic; hardware is not connected.',
             style: theme.textTheme.bodyMedium,
             textAlign: TextAlign.center,
           ),
@@ -213,27 +228,36 @@ class _AnalysisIdleView extends StatelessWidget {
               label: 'Start Dataset Demo',
               icon: Icons.science_rounded,
               width: double.infinity,
-              gradient: const LinearGradient(
-                colors: [AppColors.demoChip, AppColors.accent],
-              ),
-              color: AppColors.demoChip,
-              onPressed: provider.startDemoSession,
+              onPressed: provider.isBusy ? null : provider.startDemoSession,
             ),
           ] else ...[
             GradientButton(
-              label: 'Start Live Session',
+              label:
+                  provider.isBusy ? 'Analyzing…' : 'Analyze Recorded Workout',
               icon: Icons.sensors_rounded,
               width: double.infinity,
-              onPressed: null, // disabled until backend connected
+              onPressed: provider.isBusy ? null : provider.startSession,
             ),
             const SizedBox(height: AppSpacing.sm),
             Text(
-              'Requires FastAPI backend connection',
+              'Real model inference · synthetic sample data',
               style:
                   theme.textTheme.bodyMedium?.copyWith(color: AppColors.error),
               textAlign: TextAlign.center,
             ),
+            TextButton.icon(
+              onPressed:
+                  provider.isBusy ? null : () => _importRecording(context),
+              icon: const Icon(Icons.upload_file_rounded),
+              label: const Text('Analyze your own recording'),
+            ),
           ],
+          if (provider.error != null)
+            Padding(
+              padding: const EdgeInsets.all(AppSpacing.sm),
+              child: Text(provider.error!,
+                  style: const TextStyle(color: AppColors.error)),
+            ),
           const SizedBox(height: AppSpacing.md),
           // Model info pills
           Wrap(
@@ -249,7 +273,68 @@ class _AnalysisIdleView extends StatelessWidget {
           ),
         ],
       ),
-    );
+    ));
+  }
+}
+
+Future<void> _importRecording(BuildContext context) async {
+  final controller = TextEditingController();
+  String? error;
+  final recording = await showDialog<Map<String, dynamic>>(
+    context: context,
+    builder: (ctx) => StatefulBuilder(
+        builder: (ctx, setState) => AlertDialog(
+              title: const Text('Import one repetition'),
+              content: SizedBox(
+                  width: 480,
+                  child: SingleChildScrollView(
+                      child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const Text(
+                          'Paste a JSON recording with imu and emg arrays. See docs/inference.md for the format. This model requires wrist movement and biceps/triceps signals.'),
+                      TextField(
+                          controller: controller,
+                          minLines: 6,
+                          maxLines: 12,
+                          decoration: InputDecoration(
+                              labelText: 'Recording JSON', errorText: error)),
+                    ],
+                  ))),
+              actions: [
+                TextButton(
+                    onPressed: () => Navigator.pop(ctx),
+                    child: const Text('Cancel')),
+                FilledButton(
+                    onPressed: () {
+                      try {
+                        final value = jsonDecode(controller.text);
+                        if (value is! Map<String, dynamic> ||
+                            value['imu'] is! List ||
+                            value['emg'] is! List)
+                          throw const FormatException();
+                        Navigator.pop(ctx, {
+                          ...value,
+                          'source': 'user_recording',
+                          'expected_label': null
+                        });
+                      } catch (_) {
+                        setState(() => error =
+                            'Enter valid JSON with imu and emg arrays.');
+                      }
+                    },
+                    child: const Text('Analyze')),
+              ],
+            )),
+  );
+  controller.dispose();
+  if (recording != null && context.mounted) {
+    final provider = context.read<AnalysisProvider>();
+    if (provider.isAnalysing) {
+      await provider.nextRep(recording: recording);
+    } else {
+      await provider.startSession(recording: recording);
+    }
   }
 }
 
@@ -301,48 +386,68 @@ class _AnalysisActiveView extends StatelessWidget {
 
     return Column(
       children: [
-        // Prediction card (top)
-        _PredictionCard(
-          prediction: provider.latestPrediction,
-          currentRep: provider.currentSession?.totalReps ?? 0,
-        ),
-        // Tab bar for signals
-        Container(
-          color: AppColors.surface,
-          child: TabBar(
-            controller: tabController,
-            labelColor: AppColors.primary,
-            unselectedLabelColor: AppColors.textMuted,
-            indicatorColor: AppColors.primary,
-            indicatorSize: TabBarIndicatorSize.label,
-            labelStyle: const TextStyle(
-              fontSize: 12,
-              fontWeight: FontWeight.w600,
-            ),
-            tabs: const [
-              Tab(text: 'Accelerometer'),
-              Tab(text: 'Gyroscope'),
-              Tab(text: 'EMG'),
-            ],
+        if (provider.isBusy) const LinearProgressIndicator(),
+        if (provider.error != null)
+          Padding(
+            padding: const EdgeInsets.all(AppSpacing.sm),
+            child: Text(provider.error!,
+                style: const TextStyle(color: AppColors.error)),
           ),
-        ),
-        // Signal charts
         Expanded(
-          child: TabBarView(
-            controller: tabController,
-            children: [
-              _SignalTab(
-                child: AccelerometerChart(samples: provider.liveImu),
-              ),
-              _SignalTab(
-                child: GyroscopeChart(samples: provider.liveImu),
-              ),
-              _SignalTab(
-                child: EmgChart(samples: provider.liveEmg),
-              ),
-            ],
+            child: SingleChildScrollView(
+                child: Column(children: [
+          // Prediction card (top)
+          _PredictionCard(
+            prediction: provider.latestPrediction,
+            currentRep: provider.currentSession?.totalReps ?? 0,
           ),
-        ),
+          // Tab bar for signals
+          Container(
+            margin: const EdgeInsets.symmetric(horizontal: AppSpacing.md),
+            padding: const EdgeInsets.all(4),
+            decoration: BoxDecoration(
+                color: AppColors.surface,
+                borderRadius: BorderRadius.circular(20)),
+            child: TabBar(
+              controller: tabController,
+              labelColor: AppColors.background,
+              unselectedLabelColor: AppColors.textMuted,
+              indicatorColor: AppColors.primary,
+              indicatorSize: TabBarIndicatorSize.tab,
+              indicator: BoxDecoration(
+                  color: AppColors.primary,
+                  borderRadius: BorderRadius.circular(100)),
+              dividerColor: Colors.transparent,
+              labelStyle: const TextStyle(
+                fontSize: 12,
+                fontWeight: FontWeight.w600,
+              ),
+              tabs: const [
+                Tab(text: 'Accelerometer'),
+                Tab(text: 'Gyroscope'),
+                Tab(text: 'EMG'),
+              ],
+            ),
+          ),
+          // Signal charts
+          SizedBox(
+            height: 280,
+            child: TabBarView(
+              controller: tabController,
+              children: [
+                _SignalTab(
+                  child: AccelerometerChart(samples: provider.liveImu),
+                ),
+                _SignalTab(
+                  child: GyroscopeChart(samples: provider.liveImu),
+                ),
+                _SignalTab(
+                  child: EmgChart(samples: provider.liveEmg),
+                ),
+              ],
+            ),
+          ),
+        ]))),
         // Bottom action bar
         _SessionControls(provider: provider),
       ],
@@ -358,7 +463,6 @@ class _SignalTab extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return SingleChildScrollView(
-      physics: const BouncingScrollPhysics(),
       padding: const EdgeInsets.all(AppSpacing.md),
       child: child,
     );
@@ -405,7 +509,7 @@ class _PredictionCard extends StatelessWidget {
             PulsingDot(color: AppColors.primary, size: 8),
             const SizedBox(width: AppSpacing.sm),
             Text(
-              'Collecting data for repetition $currentRep…',
+              'Analyzing repetition ${currentRep + 1}…',
               style: theme.textTheme.bodyMedium,
             ),
           ],
@@ -420,21 +524,24 @@ class _PredictionCard extends StatelessWidget {
     return AnimatedContainer(
       duration: const Duration(milliseconds: 300),
       width: double.infinity,
+      margin: const EdgeInsets.fromLTRB(20, 8, 20, 16),
       padding: const EdgeInsets.all(AppSpacing.md),
       decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.08),
-        border: Border(
-          bottom: BorderSide(color: color.withValues(alpha: 0.4), width: 1),
-        ),
+        color: AppColors.surface,
+        borderRadius: BorderRadius.circular(AppRadius.lg),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           // Rep counter + badge
-          Row(
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            crossAxisAlignment: WrapCrossAlignment.center,
             children: [
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                 decoration: BoxDecoration(
                   color: AppColors.surfaceElevated,
                   borderRadius: BorderRadius.circular(20),
@@ -449,7 +556,6 @@ class _PredictionCard extends StatelessWidget {
               ),
               const SizedBox(width: AppSpacing.sm),
               if (prediction!.isDemo) const DemoBadge(small: true),
-              const Spacer(),
               FormClassBadge(label: cls.friendlyName, color: color),
             ],
           ),
@@ -458,6 +564,10 @@ class _PredictionCard extends StatelessWidget {
           ProbabilityBars(probabilities: prediction!.probabilities),
           const SizedBox(height: AppSpacing.sm),
           // Description
+          Text(prediction!.sourceLabel, style: theme.textTheme.labelSmall),
+          if (prediction!.expectedLabel != null)
+            Text('Dataset label: ${prediction!.expectedLabel}',
+                style: theme.textTheme.labelSmall),
           Text(
             cls.description,
             style: theme.textTheme.bodyMedium?.copyWith(
@@ -494,43 +604,52 @@ class _SessionControls extends StatelessWidget {
       ),
       decoration: const BoxDecoration(
         color: AppColors.surface,
-        border: Border(
-            top: BorderSide(color: AppColors.divider, width: 0.5)),
+        borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
       ),
-      child: Row(
-        children: [
-          // Session stats
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
+      child: LayoutBuilder(builder: (context, constraints) {
+        final stats = Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
                   session == null
                       ? 'Starting…'
                       : '${session.totalReps} reps completed',
-                  style: theme.textTheme.titleMedium,
-                ),
-                if (session != null && session.totalReps > 0)
-                  Text(
+                  style: theme.textTheme.titleMedium),
+              if (session != null && session.totalReps > 0)
+                Text(
                     '${session.goodReps} good · ${session.formScore.toStringAsFixed(0)}% form score',
-                    style: theme.textTheme.bodyMedium?.copyWith(
-                      color: AppColors.good,
-                    ),
-                  ),
-              ],
-            ),
-          ),
-          // Next Rep button
-          if (provider.currentRep != null && !provider.isPaused)
-            GradientButton(
-              label: 'Next Rep',
-              icon: Icons.skip_next_rounded,
-              onPressed: provider.nextDemoRep,
-            ),
-        ],
-      ),
+                    style: theme.textTheme.bodyMedium
+                        ?.copyWith(color: AppColors.good)),
+            ]);
+        final next = provider.currentRep != null && !provider.isPaused
+            ? GradientButton(
+                label: provider.usesImportedRecording
+                    ? 'Import next rep'
+                    : 'Next Rep',
+                icon: Icons.skip_next_rounded,
+                onPressed: provider.isBusy
+                    ? null
+                    : provider.usesImportedRecording
+                        ? () => _importRecording(context)
+                        : provider.nextDemoRep,
+              )
+            : null;
+        if (MediaQuery.textScalerOf(context).scale(16) > 21 ||
+            provider.usesImportedRecording) {
+          return Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                stats,
+                if (next != null) ...[const SizedBox(height: 12), next]
+              ]);
+        }
+        return Row(children: [
+          Expanded(child: stats),
+          if (next != null) ...[const SizedBox(width: 12), next]
+        ]);
+      }),
     );
   }
 }
-
-

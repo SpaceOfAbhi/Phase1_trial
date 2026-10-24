@@ -1,57 +1,56 @@
-/// Stub for the future FastAPI backend integration.
-///
-/// When the FastAPI backend is ready, implement this service to:
-///   1. POST a normalized 256×8 feature array to the /predict endpoint.
-///   2. Parse the JSON response (predicted_class, probabilities).
-///   3. Return a real [PredictionResult] with [isDemo]=false.
-///
-/// Until then, all actual inference goes through [MockDataService] in demo mode.
-///
-/// Expected FastAPI contract (example):
-/// ```
-/// POST /predict
-/// Content-Type: application/json
-/// {
-///   "features": [[f0, f1, ..., f7], ...],  // 256 × 8 float array
-///   "exercise": "bicep_curl"
-/// }
-///
-/// Response:
-/// {
-///   "predicted_class": "GOOD",
-///   "probabilities": {
-///     "EXCESSIVE_ELBOW_MOVEMENT": 0.02,
-///     "EXCESSIVE_SWING": 0.03,
-///     "GOOD": 0.92,
-///     "PARTIAL_ROM": 0.03
-///   },
-///   "confidence": 0.92,
-///   "model_version": "cnn_lstm_v1"
-/// }
-/// ```
-library api_service;
-
-import '../models/workout_models.dart';
+import 'dart:async';
+import 'dart:convert';
+import 'package:http/http.dart' as http;
 
 class ApiService {
-  ApiService({required this.baseUrl});
-
+  ApiService(
+      {this.baseUrl = const String.fromEnvironment('API_BASE_URL',
+          defaultValue: 'http://127.0.0.1:8000'),
+      http.Client? client})
+      : _client = client ?? http.Client();
   final String baseUrl;
+  final http.Client _client;
 
-  // TODO(phase-2): Replace stub with real HTTP implementation using dio.
-  // ignore: unused_element
-  Future<PredictionResult> predictFormClass({
-    required List<List<double>> features, // shape [256][8]
-    required String exercise,
-  }) async {
-    throw UnimplementedError(
-      'FastAPI backend not yet integrated. '
-      'Use MockDataService for demo predictions.',
-    );
+  Future<dynamic> _request(String path, {Map<String, dynamic>? body}) async {
+    try {
+      final uri = Uri.parse('$baseUrl$path');
+      final response = await (body == null
+              ? _client.get(uri)
+              : _client.post(uri,
+                  headers: {'Content-Type': 'application/json'},
+                  body: jsonEncode(body)))
+          .timeout(const Duration(seconds: 30));
+      if (response.statusCode != 200) {
+        final payload = jsonDecode(response.body);
+        final detail = payload['detail'];
+        throw Exception(detail is String
+            ? detail
+            : 'Invalid recording. Check the sensor format in docs/inference.md.');
+      }
+      return jsonDecode(response.body);
+    } on http.ClientException {
+      throw Exception('Cannot reach the analysis server. Start it and retry.');
+    } on TimeoutException {
+      throw Exception('Analysis timed out. Check the server and retry.');
+    }
   }
 
-  Future<bool> checkHealth() async {
-    // TODO(phase-2): GET $baseUrl/health and return true if 200.
-    return false;
+  Future<List<String>> recordings() async {
+    final rows = await _request('/recordings') as List<dynamic>;
+    return rows.map((row) => row['id'] as String).toList();
   }
+
+  Future<Map<String, dynamic>> recording(String id) async =>
+      Map<String, dynamic>.from(await _request('/recordings/$id') as Map);
+
+  Future<Map<String, dynamic>> predict(Map<String, dynamic> recording) async =>
+      Map<String, dynamic>.from(await _request('/predict', body: {
+        'exercise': recording['exercise'] ?? 'bicep_curl',
+        'imu': recording['imu'],
+        'emg': recording['emg'],
+      }) as Map);
+
+  Future<bool> checkHealth() async =>
+      (await _request('/health'))['model_loaded'] == true;
+  void dispose() => _client.close();
 }

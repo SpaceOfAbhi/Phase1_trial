@@ -26,7 +26,6 @@ class ExerciseSelectScreen extends StatelessWidget {
         backgroundColor: AppColors.background,
       ),
       body: CustomScrollView(
-        physics: const BouncingScrollPhysics(),
         slivers: [
           SliverPadding(
             padding: const EdgeInsets.all(AppSpacing.md),
@@ -68,7 +67,7 @@ class ExerciseSelectScreen extends StatelessWidget {
                 _ExerciseCard(
                   name: 'Squat',
                   muscleGroup: 'Quads · Glutes · Hamstrings',
-                  description: 'Model training in progress – coming in Phase 2.',
+                  description: 'Not supported by the supplied model.',
                   icon: Icons.accessibility_new_rounded,
                   accentColor: AppColors.textMuted,
                   isAvailable: false,
@@ -77,7 +76,7 @@ class ExerciseSelectScreen extends StatelessWidget {
                 _ExerciseCard(
                   name: 'Shoulder Press',
                   muscleGroup: 'Deltoids · Triceps',
-                  description: 'Model training in progress – coming in Phase 2.',
+                  description: 'Not supported by the supplied model.',
                   icon: Icons.sports_gymnastics_rounded,
                   accentColor: AppColors.textMuted,
                   isAvailable: false,
@@ -86,7 +85,7 @@ class ExerciseSelectScreen extends StatelessWidget {
                 _ExerciseCard(
                   name: 'Deadlift',
                   muscleGroup: 'Back · Glutes · Hamstrings',
-                  description: 'Model training in progress – coming in Phase 2.',
+                  description: 'Not supported by the supplied model.',
                   icon: Icons.sports_mma_rounded,
                   accentColor: AppColors.textMuted,
                   isAvailable: false,
@@ -128,8 +127,8 @@ class _DemoBanner extends StatelessWidget {
             const SizedBox(width: AppSpacing.sm),
             Expanded(
               child: Text(
-                'Live mode: FastAPI backend not connected. '
-                'Enable Dataset Demo for a working demonstration.',
+                'Recorded analysis uses the trained model. Bundled data is synthetic. '
+                'Shoe hardware is not connected.',
                 style: theme.textTheme.bodyMedium?.copyWith(
                   color: AppColors.warning,
                   fontSize: 12,
@@ -155,7 +154,7 @@ class _DemoBanner extends StatelessWidget {
           const SizedBox(width: AppSpacing.sm),
           Expanded(
             child: Text(
-              'Dataset Demo active: synthetic data will be replayed. '
+              'Offline preview: generated signals will be shown. '
               'Predictions are MOCK – not real CNN-LSTM inference.',
               style: theme.textTheme.bodyMedium?.copyWith(
                 color: AppColors.demoChip,
@@ -198,9 +197,8 @@ class _ExerciseCard extends StatelessWidget {
 
     return GlassCard(
       onTap: isAvailable ? onTap : null,
-      borderColor: isAvailable
-          ? accentColor.withValues(alpha: 0.4)
-          : AppColors.border,
+      borderColor:
+          isAvailable ? accentColor.withValues(alpha: 0.4) : AppColors.border,
       padding: const EdgeInsets.all(AppSpacing.md),
       child: Row(
         children: [
@@ -222,14 +220,15 @@ class _ExerciseCard extends StatelessWidget {
               children: [
                 Row(
                   children: [
-                    Text(
+                    Flexible(
+                        child: Text(
                       name,
                       style: theme.textTheme.headlineSmall?.copyWith(
                         color: isAvailable
                             ? AppColors.textPrimary
                             : AppColors.textMuted,
                       ),
-                    ),
+                    )),
                     const SizedBox(width: AppSpacing.sm),
                     if (!isAvailable)
                       Container(
@@ -266,8 +265,7 @@ class _ExerciseCard extends StatelessWidget {
           ),
           if (isAvailable) ...[
             const SizedBox(width: AppSpacing.sm),
-            Icon(Icons.chevron_right_rounded,
-                color: accentColor, size: 24),
+            Icon(Icons.chevron_right_rounded, color: accentColor, size: 24),
           ],
         ],
       ),

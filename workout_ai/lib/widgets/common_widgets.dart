@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import '../theme/app_theme.dart';
 
 // ---------------------------------------------------------------------------
-// GlassCard – frosted-glass style card used throughout the app
+// GlassCard – rounded surface card used throughout the app
 // ---------------------------------------------------------------------------
 
 class GlassCard extends StatelessWidget {
@@ -12,7 +12,6 @@ class GlassCard extends StatelessWidget {
     this.padding,
     this.margin,
     this.borderColor,
-    this.gradient,
     this.onTap,
   });
 
@@ -20,7 +19,6 @@ class GlassCard extends StatelessWidget {
   final EdgeInsetsGeometry? padding;
   final EdgeInsetsGeometry? margin;
   final Color? borderColor;
-  final Gradient? gradient;
   final VoidCallback? onTap;
 
   @override
@@ -30,18 +28,9 @@ class GlassCard extends StatelessWidget {
       decoration: BoxDecoration(
         color: AppColors.surface,
         borderRadius: BorderRadius.circular(AppRadius.lg),
-        border: Border.all(
-          color: borderColor ?? AppColors.border,
-          width: 0.8,
-        ),
-        gradient: gradient,
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.25),
-            blurRadius: 12,
-            offset: const Offset(0, 4),
-          ),
-        ],
+        border: borderColor == null
+            ? null
+            : Border.all(color: borderColor!.withValues(alpha: 0.2)),
       ),
       child: Material(
         color: Colors.transparent,
@@ -89,48 +78,22 @@ class MetricTile extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(AppSpacing.md),
       decoration: BoxDecoration(
-        color: AppColors.surfaceElevated,
-        borderRadius: BorderRadius.circular(AppRadius.md),
-        border: Border.all(color: AppColors.border, width: 0.5),
+        color: AppColors.surface,
+        borderRadius: BorderRadius.circular(AppRadius.lg),
       ),
       child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          if (icon != null) ...[
-            Icon(icon, size: 18, color: accent),
-            const SizedBox(height: AppSpacing.sm),
-          ],
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.end,
-            children: [
-              Text(
-                value,
-                style: theme.textTheme.displaySmall?.copyWith(
-                  color: valueColor ?? accent,
-                  fontWeight: FontWeight.w800,
-                ),
-              ),
-              if (unit != null) ...[
-                const SizedBox(width: 2),
-                Padding(
-                  padding: const EdgeInsets.only(bottom: 3),
-                  child: Text(
-                    unit!,
-                    style: theme.textTheme.bodyMedium?.copyWith(
-                      color: AppColors.textSecondary,
-                    ),
-                  ),
-                ),
-              ],
-            ],
-          ),
-          const SizedBox(height: 2),
-          Text(
-            label,
-            style: theme.textTheme.labelSmall,
-          ),
-        ],
-      ),
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(children: [
+              Expanded(child: Text(label, style: theme.textTheme.bodyMedium)),
+              if (icon != null) Icon(icon, size: 20, color: AppColors.textMuted)
+            ]),
+            const SizedBox(height: 16),
+            Text(unit == null ? value : '$value$unit',
+                style: theme.textTheme.displayLarge?.copyWith(
+                    color: valueColor ?? accent, fontWeight: FontWeight.w500)),
+          ]),
     );
   }
 }
@@ -162,11 +125,8 @@ class SectionHeader extends StatelessWidget {
         ],
         Expanded(
           child: Text(
-            title.toUpperCase(),
-            style: theme.textTheme.labelSmall?.copyWith(
-              color: AppColors.textSecondary,
-              letterSpacing: 1.2,
-            ),
+            title,
+            style: theme.textTheme.headlineSmall,
           ),
         ),
         if (trailing != null) trailing!,
@@ -206,7 +166,7 @@ class DemoBadge extends StatelessWidget {
           ),
           SizedBox(width: small ? 3 : 5),
           Text(
-            'DATASET DEMO',
+            'MOCK DATA',
             style: TextStyle(
               fontSize: small ? 9 : 10,
               fontWeight: FontWeight.w700,
@@ -259,6 +219,13 @@ class _PulsingDotState extends State<PulsingDot>
 
   @override
   Widget build(BuildContext context) {
+    if (MediaQuery.disableAnimationsOf(context)) {
+      return Container(
+          width: widget.size,
+          height: widget.size,
+          decoration:
+              BoxDecoration(shape: BoxShape.circle, color: widget.color));
+    }
     return AnimatedBuilder(
       animation: _anim,
       builder: (_, __) => Container(
@@ -267,13 +234,6 @@ class _PulsingDotState extends State<PulsingDot>
         decoration: BoxDecoration(
           shape: BoxShape.circle,
           color: widget.color.withValues(alpha: _anim.value),
-          boxShadow: [
-            BoxShadow(
-              color: widget.color.withValues(alpha: _anim.value * 0.5),
-              blurRadius: 6,
-              spreadRadius: 2,
-            ),
-          ],
         ),
       ),
     );
@@ -307,13 +267,6 @@ class FormClassBadge extends StatelessWidget {
         color: color.withValues(alpha: 0.15),
         borderRadius: BorderRadius.circular(AppRadius.xxl),
         border: Border.all(color: color.withValues(alpha: 0.6), width: 1.2),
-        boxShadow: [
-          BoxShadow(
-            color: color.withValues(alpha: 0.2),
-            blurRadius: 12,
-            spreadRadius: 1,
-          ),
-        ],
       ),
       child: Text(
         label,
@@ -363,21 +316,15 @@ class AnimatedProgressBar extends StatelessWidget {
               ),
             ),
             AnimatedContainer(
-              duration: duration,
+              duration: MediaQuery.disableAnimationsOf(context)
+                  ? Duration.zero
+                  : duration,
               curve: Curves.easeOut,
               width: constraints.maxWidth * value.clamp(0.0, 1.0),
               height: height,
               decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  colors: [color.withValues(alpha: 0.7), color],
-                ),
+                color: color,
                 borderRadius: BorderRadius.circular(height),
-                boxShadow: [
-                  BoxShadow(
-                    color: color.withValues(alpha: 0.4),
-                    blurRadius: 6,
-                  ),
-                ],
               ),
             ),
           ],
@@ -391,108 +338,40 @@ class AnimatedProgressBar extends StatelessWidget {
 // GradientButton – primary CTA button with glow
 // ---------------------------------------------------------------------------
 
-class GradientButton extends StatefulWidget {
-  const GradientButton({
-    super.key,
-    required this.label,
-    required this.onPressed,
-    this.icon,
-    this.gradient,
-    this.color,
-    this.width,
-    this.height = 56,
-  });
-
+class GradientButton extends StatelessWidget {
+  const GradientButton(
+      {super.key,
+      required this.label,
+      required this.onPressed,
+      this.icon,
+      this.width,
+      this.height = 56});
   final String label;
   final VoidCallback? onPressed;
   final IconData? icon;
-  final Gradient? gradient;
-  final Color? color;
   final double? width;
   final double height;
 
   @override
-  State<GradientButton> createState() => _GradientButtonState();
-}
-
-class _GradientButtonState extends State<GradientButton>
-    with SingleTickerProviderStateMixin {
-  late final AnimationController _ctrl;
-  late final Animation<double> _scale;
-
-  @override
-  void initState() {
-    super.initState();
-    _ctrl = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 100),
-      lowerBound: 0.95,
-      upperBound: 1.0,
-      value: 1.0,
-    );
-    _scale = _ctrl;
-  }
-
-  @override
-  void dispose() {
-    _ctrl.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final enabled = widget.onPressed != null;
-    final grad = widget.gradient ??
-        LinearGradient(
-          colors: enabled
-              ? [AppColors.primary, AppColors.primaryDim]
-              : [AppColors.textMuted, AppColors.textMuted],
-        );
-
-    return GestureDetector(
-      onTapDown: enabled ? (_) => _ctrl.reverse() : null,
-      onTapUp: enabled ? (_) => _ctrl.forward() : null,
-      onTapCancel: enabled ? () => _ctrl.forward() : null,
-      onTap: widget.onPressed,
-      child: ScaleTransition(
-        scale: _scale,
-        child: Container(
-          width: widget.width,
-          height: widget.height,
-          decoration: BoxDecoration(
-            gradient: grad,
-            borderRadius: BorderRadius.circular(AppRadius.md),
-            boxShadow: enabled
-                ? [
-                    BoxShadow(
-                      color: (widget.color ?? AppColors.primary)
-                          .withValues(alpha: 0.4),
-                      blurRadius: 16,
-                      offset: const Offset(0, 6),
-                    )
-                  ]
-                : null,
-          ),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              if (widget.icon != null) ...[
-                Icon(widget.icon, color: AppColors.background, size: 20),
-                const SizedBox(width: AppSpacing.sm),
-              ],
-              Text(
-                widget.label,
-                style: Theme.of(context).textTheme.labelLarge?.copyWith(
-                      color: AppColors.background,
-                      fontWeight: FontWeight.w700,
-                    ),
-              ),
-            ],
-          ),
+  Widget build(BuildContext context) => SizedBox(
+        width: width,
+        child: ConstrainedBox(
+          constraints: BoxConstraints(minHeight: height),
+          child: FilledButton(
+              onPressed: onPressed,
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  if (icon != null) ...[
+                    Icon(icon, size: 22),
+                    const SizedBox(width: 8)
+                  ],
+                  Flexible(child: Text(label, textAlign: TextAlign.center)),
+                ],
+              )),
         ),
-      ),
-    );
-  }
+      );
 }
 
 // ---------------------------------------------------------------------------

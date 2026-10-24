@@ -138,6 +138,8 @@ class PredictionResult extends Equatable {
     required this.probabilities,
     required this.isDemo,
     required this.timestamp,
+    this.source = 'mock',
+    this.expectedLabel,
   });
 
   final FormClass predictedClass;
@@ -149,6 +151,14 @@ class PredictionResult extends Equatable {
   final bool isDemo;
 
   final DateTime timestamp;
+  final String source;
+  final String? expectedLabel;
+
+  String get sourceLabel => isDemo
+      ? 'Mock prediction'
+      : source == 'synthetic_dataset'
+          ? 'Model inference · synthetic recording'
+          : 'Model inference · imported recording';
 
   double get confidence => probabilityFor(predictedClass);
 
@@ -229,6 +239,65 @@ class WorkoutRepetition extends Equatable {
   final PredictionResult prediction;
   final int repNumber;
 
+  factory WorkoutRepetition.fromJson(Map<String, dynamic> json) {
+    final features = (json['features'] as List)
+        .map((row) => (row as List).map((n) => (n as num).toDouble()).toList())
+        .toList();
+    final probabilities = json['probabilities'] as Map;
+    return WorkoutRepetition(
+      id: json['id'] as String,
+      repNumber: json['rep_number'] as int,
+      imuSamples: features
+          .map((r) => ImuSample(
+              accelerometerX: r[0],
+              accelerometerY: r[1],
+              accelerometerZ: r[2],
+              gyroscopeX: r[3],
+              gyroscopeY: r[4],
+              gyroscopeZ: r[5]))
+          .toList(),
+      emgSamples: features
+          .map((r) => EmgSample(bicepsRms: r[6], tricepsRms: r[7]))
+          .toList(),
+      prediction: PredictionResult(
+        predictedClass: FormClass.fromLabel(json['predicted_class'] as String),
+        probabilities: ModelMetadata.current.classes
+            .map((c) => (probabilities[c] as num).toDouble())
+            .toList(),
+        isDemo: json['is_demo'] as bool? ?? false,
+        timestamp: DateTime.parse(json['timestamp'] as String),
+        source: json['source'] as String? ?? 'user_recording',
+        expectedLabel: json['expected_label'] as String?,
+      ),
+    );
+  }
+
+  Map<String, dynamic> toJson() => {
+        'id': id,
+        'rep_number': repNumber,
+        'features': List.generate(
+            imuSamples.length,
+            (i) => [
+                  imuSamples[i].accelerometerX,
+                  imuSamples[i].accelerometerY,
+                  imuSamples[i].accelerometerZ,
+                  imuSamples[i].gyroscopeX,
+                  imuSamples[i].gyroscopeY,
+                  imuSamples[i].gyroscopeZ,
+                  emgSamples[i].bicepsRms,
+                  emgSamples[i].tricepsRms
+                ]),
+        'predicted_class': prediction.predictedClass.displayName,
+        'probabilities': {
+          for (final c in FormClass.values)
+            c.displayName: prediction.probabilityFor(c)
+        },
+        'is_demo': prediction.isDemo,
+        'timestamp': prediction.timestamp.toIso8601String(),
+        'source': prediction.source,
+        'expected_label': prediction.expectedLabel,
+      };
+
   @override
   List<Object?> get props => [id, prediction, repNumber];
 }
@@ -249,16 +318,36 @@ class WorkoutSession extends Equatable {
   final DateTime? endTime;
   final List<WorkoutRepetition> repetitions;
 
+  Map<String, dynamic> toJson() => {
+        'id': id,
+        'exercise': exercise,
+        'start_time': startTime.toIso8601String(),
+        'end_time': endTime?.toIso8601String(),
+        'repetitions': repetitions.map((r) => r.toJson()).toList(),
+      };
+
+  factory WorkoutSession.fromJson(Map<String, dynamic> json) => WorkoutSession(
+        id: json['id'] as String,
+        exercise: json['exercise'] as String,
+        startTime: DateTime.parse(json['start_time'] as String),
+        endTime: json['end_time'] == null
+            ? null
+            : DateTime.parse(json['end_time'] as String),
+        repetitions: (json['repetitions'] as List)
+            .map((r) =>
+                WorkoutRepetition.fromJson(Map<String, dynamic>.from(r as Map)))
+            .toList(),
+      );
+
   int get totalReps => repetitions.length;
 
-  int get goodReps =>
-      repetitions.where((r) => r.prediction.predictedClass == FormClass.good).length;
+  int get goodReps => repetitions
+      .where((r) => r.prediction.predictedClass == FormClass.good)
+      .length;
 
-  double get formScore =>
-      totalReps == 0 ? 0.0 : (goodReps / totalReps) * 100;
+  double get formScore => totalReps == 0 ? 0.0 : (goodReps / totalReps) * 100;
 
-  Duration get duration =>
-      (endTime ?? DateTime.now()).difference(startTime);
+  Duration get duration => (endTime ?? DateTime.now()).difference(startTime);
 
   @override
   List<Object?> get props => [id, exercise, startTime, repetitions];

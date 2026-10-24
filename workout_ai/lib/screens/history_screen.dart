@@ -23,32 +23,29 @@ class HistoryScreen extends StatelessWidget {
     return Scaffold(
       backgroundColor: AppColors.background,
       body: CustomScrollView(
-        physics: const BouncingScrollPhysics(),
         slivers: [
-          SliverAppBar(
-            pinned: true,
-            backgroundColor: AppColors.background,
-            surfaceTintColor: Colors.transparent,
-            title: Row(
-              children: [
-                const Text('Workout History'),
-                const SizedBox(width: AppSpacing.sm),
-                if (provider.isDemoMode) const DemoBadge(small: true),
-              ],
+          SliverToBoxAdapter(
+              child: SafeArea(
+            bottom: false,
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(16, 24, 16, 16),
+              child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text('Workout History',
+                        style: theme.textTheme.displaySmall),
+                    const SizedBox(height: 12),
+                    Wrap(
+                        spacing: 8,
+                        runSpacing: 8,
+                        crossAxisAlignment: WrapCrossAlignment.center,
+                        children: [
+                          Chip(label: Text('${sessions.length} sessions')),
+                          if (provider.isDemoMode) const DemoBadge(small: true),
+                        ]),
+                  ]),
             ),
-            actions: [
-              Padding(
-                padding: const EdgeInsets.only(right: AppSpacing.sm),
-                child: Chip(
-                  label: Text('${sessions.length} sessions'),
-                  backgroundColor: AppColors.surfaceElevated,
-                  labelStyle: theme.textTheme.labelSmall?.copyWith(
-                    color: AppColors.textSecondary,
-                  ),
-                ),
-              ),
-            ],
-          ),
+          )),
           if (sessions.isEmpty)
             SliverFillRemaining(
               child: EmptyStateWidget(
@@ -138,7 +135,9 @@ class _SessionCard extends StatelessWidget {
           ),
           const SizedBox(height: AppSpacing.md),
           // Stats row
-          Row(
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
             children: [
               _StatChip(
                 icon: Icons.repeat_rounded,
@@ -146,14 +145,12 @@ class _SessionCard extends StatelessWidget {
                 label: 'reps',
                 color: AppColors.primary,
               ),
-              const SizedBox(width: AppSpacing.sm),
               _StatChip(
                 icon: Icons.check_circle_rounded,
                 value: '${session.goodReps}',
                 label: 'good',
                 color: AppColors.good,
               ),
-              const SizedBox(width: AppSpacing.sm),
               _StatChip(
                 icon: Icons.timer_rounded,
                 value: _formatDuration(session.duration),
@@ -202,8 +199,18 @@ class _SessionCard extends StatelessWidget {
 
   String _formatDate(DateTime dt) {
     final months = [
-      'Jan','Feb','Mar','Apr','May','Jun',
-      'Jul','Aug','Sep','Oct','Nov','Dec'
+      'Jan',
+      'Feb',
+      'Mar',
+      'Apr',
+      'May',
+      'Jun',
+      'Jul',
+      'Aug',
+      'Sep',
+      'Oct',
+      'Nov',
+      'Dec'
     ];
     final hour = dt.hour.toString().padLeft(2, '0');
     final min = dt.minute.toString().padLeft(2, '0');
@@ -235,9 +242,8 @@ class _StatChip extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
       decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.12),
+        color: AppColors.surfaceElevated,
         borderRadius: BorderRadius.circular(AppRadius.sm),
-        border: Border.all(color: color.withValues(alpha: 0.25), width: 0.7),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
@@ -298,7 +304,8 @@ class _FormBreakdown extends StatelessWidget {
                   ),
                 ),
                 Expanded(
-                  child: AnimatedProgressBar(value: pct, color: color, height: 6),
+                  child:
+                      AnimatedProgressBar(value: pct, color: color, height: 6),
                 ),
                 const SizedBox(width: AppSpacing.sm),
                 Text(

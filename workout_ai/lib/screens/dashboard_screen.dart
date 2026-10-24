@@ -67,7 +67,7 @@ class _DashboardScreenState extends State<DashboardScreen>
   }
 
   Widget _buildNavBar() {
-    return Container(
+    return DecoratedBox(
       decoration: const BoxDecoration(
         color: AppColors.surface,
         border: Border(top: BorderSide(color: AppColors.divider, width: 0.5)),
@@ -77,6 +77,7 @@ class _DashboardScreenState extends State<DashboardScreen>
         onDestinationSelected: (i) => setState(() => _navIndex = i),
         backgroundColor: Colors.transparent,
         elevation: 0,
+        height: 80,
         destinations: const [
           NavigationDestination(
             icon: Icon(Icons.dashboard_outlined),
@@ -119,7 +120,6 @@ class _DashboardHome extends StatelessWidget {
         : history.fold<double>(0, (s, h) => s + h.formScore) / history.length;
 
     return CustomScrollView(
-      physics: const BouncingScrollPhysics(),
       slivers: [
         _DashboardAppBar(isDemoMode: provider.isDemoMode),
         SliverPadding(
@@ -129,9 +129,9 @@ class _DashboardHome extends StatelessWidget {
           ),
           sliver: SliverList(
             delegate: SliverChildListDelegate([
-              _DemoModeToggle(provider: provider),
-              const SizedBox(height: AppSpacing.lg),
               _HeroCard(avgScore: avgScore),
+              const SizedBox(height: AppSpacing.md),
+              _DemoModeToggle(provider: provider),
               const SizedBox(height: AppSpacing.lg),
               const SectionHeader(
                 title: 'Workout Summary',
@@ -154,7 +154,7 @@ class _DashboardHome extends StatelessWidget {
                 const SizedBox(height: AppSpacing.lg),
               ],
               _ModelInfoCard(),
-              const SizedBox(height: 100),
+              const SizedBox(height: 24),
             ]),
           ),
         ),
@@ -175,62 +175,35 @@ class _DashboardAppBar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    return SliverAppBar(
-      expandedHeight: 110,
-      floating: false,
-      pinned: true,
-      backgroundColor: AppColors.background,
-      surfaceTintColor: Colors.transparent,
-      flexibleSpace: FlexibleSpaceBar(
-        titlePadding: const EdgeInsets.only(
-          left: AppSpacing.md,
-          bottom: AppSpacing.md,
-        ),
-        title: Row(
-          crossAxisAlignment: CrossAxisAlignment.end,
-          children: [
-            Container(
-              width: 28,
-              height: 28,
-              decoration: BoxDecoration(
-                gradient: const LinearGradient(
-                  colors: [AppColors.primary, AppColors.accent],
-                ),
-                borderRadius: BorderRadius.circular(8),
-              ),
-              child: const Icon(
-                Icons.psychology_alt_rounded,
-                size: 16,
-                color: Colors.white,
-              ),
-            ),
-            const SizedBox(width: 8),
-            Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'WorkoutAI',
-                  style: theme.textTheme.titleLarge?.copyWith(
-                    color: AppColors.textPrimary,
-                    fontSize: 18,
-                    fontWeight: FontWeight.w800,
-                  ),
-                ),
-                Text(
-                  'CNN-LSTM Form Analyser',
-                  style: theme.textTheme.labelSmall?.copyWith(
-                    color: AppColors.textMuted,
-                    fontSize: 10,
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(width: 8),
-            if (isDemoMode) const DemoBadge(small: true),
-          ],
-        ),
-      ),
+    return SliverToBoxAdapter(
+      child: SafeArea(
+          bottom: false,
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(16, 24, 16, 8),
+            child: Row(children: [
+              Container(
+                  width: 40,
+                  height: 40,
+                  decoration: const BoxDecoration(
+                      color: AppColors.primary, shape: BoxShape.circle),
+                  child: const Icon(Icons.psychology_alt_rounded,
+                      size: 24, color: AppColors.background)),
+              const SizedBox(width: 12),
+              Expanded(
+                  child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                    Text('WorkoutAI', style: theme.textTheme.displayMedium),
+                    const SizedBox(height: 4),
+                    Text('CNN-LSTM Form Analyser',
+                        style: theme.textTheme.bodyMedium),
+                    if (isDemoMode) ...[
+                      const SizedBox(height: 8),
+                      const DemoBadge(small: true)
+                    ],
+                  ])),
+            ]),
+          )),
     );
   }
 }
@@ -274,14 +247,14 @@ class _DemoModeToggle extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  'Dataset Demo Mode',
+                  'Offline UI preview',
                   style: theme.textTheme.titleMedium,
                 ),
                 Text(
                   provider.isDemoMode
-                      ? 'Using synthetic dataset – not real sensor data'
-                      : 'Live sensor mode – connect FastAPI backend',
-                  style: theme.textTheme.bodyMedium?.copyWith(fontSize: 11),
+                      ? 'Generated signals · mock predictions'
+                      : 'Trained model · recorded data',
+                  style: theme.textTheme.bodyMedium,
                 ),
               ],
             ),
@@ -311,61 +284,42 @@ class _HeroCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(AppSpacing.lg),
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [
-            AppColors.accent.withValues(alpha: 0.35),
-            AppColors.primary.withValues(alpha: 0.18),
-            AppColors.surface,
-          ],
+    return GlassCard(
+      padding: const EdgeInsets.all(20),
+      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+        LayoutBuilder(builder: (context, constraints) {
+          final copy =
+              Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            Text('Start Analysis', style: theme.textTheme.displaySmall),
+            const SizedBox(height: 8),
+            Text(
+                'Analyze recorded bicep-curl repetitions with the trained model.',
+                style: theme.textTheme.bodyMedium),
+          ]);
+          if (MediaQuery.textScalerOf(context).scale(16) > 21) {
+            return Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  copy,
+                  const SizedBox(height: 16),
+                  FormScoreRing(score: avgScore, size: 112)
+                ]);
+          }
+          return Row(crossAxisAlignment: CrossAxisAlignment.center, children: [
+            Expanded(child: copy),
+            const SizedBox(width: 16),
+            FormScoreRing(score: avgScore, size: 96),
+          ]);
+        }),
+        const SizedBox(height: 20),
+        GradientButton(
+          label: 'Begin Session',
+          icon: Icons.play_arrow_rounded,
+          width: double.infinity,
+          onPressed: () => Navigator.of(context).push(
+              MaterialPageRoute(builder: (_) => const ExerciseSelectScreen())),
         ),
-        borderRadius: BorderRadius.circular(AppRadius.xl),
-        border: Border.all(
-          color: AppColors.primary.withValues(alpha: 0.3),
-          width: 0.8,
-        ),
-      ),
-      child: Row(
-        children: [
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'Start Analysis',
-                  style: theme.textTheme.displaySmall,
-                ),
-                const SizedBox(height: AppSpacing.sm),
-                Text(
-                  'CNN-LSTM model classifies your bicep-curl repetitions in real time.',
-                  style: theme.textTheme.bodyMedium,
-                ),
-                const SizedBox(height: AppSpacing.md),
-                GradientButton(
-                  label: 'Begin Session',
-                  icon: Icons.play_arrow_rounded,
-                  onPressed: () {
-                    // Navigate to exercise select (nav index 1)
-                    // Handled via parent widget's nav state
-                    Navigator.of(context).push(
-                      MaterialPageRoute(
-                        builder: (_) => const ExerciseSelectScreen(),
-                      ),
-                    );
-                  },
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(width: AppSpacing.lg),
-          FormScoreRing(score: avgScore, size: 110),
-        ],
-      ),
+      ]),
     );
   }
 }
@@ -387,39 +341,50 @@ class _SummaryGrid extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return GridView.count(
-      crossAxisCount: 3,
-      crossAxisSpacing: AppSpacing.sm,
-      mainAxisSpacing: AppSpacing.sm,
-      childAspectRatio: 0.95,
-      shrinkWrap: true,
-      physics: const NeverScrollableScrollPhysics(),
-      children: [
-        MetricTile(
-          label: 'Sessions',
-          value: totalSessions.toString(),
-          icon: Icons.calendar_today_rounded,
-          accentColor: AppColors.accent,
-        ),
-        MetricTile(
-          label: 'Total Reps',
-          value: totalReps.toString(),
-          icon: Icons.repeat_rounded,
-          accentColor: AppColors.primary,
-        ),
-        MetricTile(
-          label: 'Avg Score',
-          value: avgScore.toStringAsFixed(0),
-          unit: '%',
-          icon: Icons.star_rounded,
-          accentColor: avgScore >= 75
-              ? AppColors.good
-              : avgScore >= 50
-                  ? AppColors.warning
-                  : AppColors.error,
-        ),
-      ],
-    );
+    final theme = Theme.of(context);
+    final scoreColor = avgScore >= 75
+        ? AppColors.good
+        : avgScore >= 50
+            ? AppColors.warning
+            : AppColors.error;
+    return Column(children: [
+      LayoutBuilder(builder: (context, constraints) {
+        final stacked = MediaQuery.textScalerOf(context).scale(16) > 21;
+        final width =
+            stacked ? constraints.maxWidth : (constraints.maxWidth - 12) / 2;
+        return Wrap(spacing: 12, runSpacing: 12, children: [
+          SizedBox(
+              width: width,
+              child: MetricTile(
+                  label: 'Sessions',
+                  value: totalSessions.toString(),
+                  icon: Icons.calendar_today_rounded,
+                  accentColor: AppColors.accent)),
+          SizedBox(
+              width: width,
+              child: MetricTile(
+                  label: 'Total Reps',
+                  value: totalReps.toString(),
+                  icon: Icons.repeat_rounded,
+                  accentColor: AppColors.primary)),
+        ]);
+      }),
+      const SizedBox(height: 12),
+      GlassCard(
+          child: Column(children: [
+        Row(children: [
+          const Icon(Icons.star_rounded, size: 20, color: AppColors.textMuted),
+          const SizedBox(width: 8),
+          Expanded(
+              child: Text('Avg Score', style: theme.textTheme.titleMedium)),
+          Text('${avgScore.toStringAsFixed(0)}%',
+              style:
+                  theme.textTheme.headlineMedium?.copyWith(color: scoreColor)),
+        ]),
+        const SizedBox(height: 12),
+        AnimatedProgressBar(value: avgScore / 100, color: scoreColor),
+      ])),
+    ]);
   }
 }
 
@@ -536,7 +501,9 @@ class _ModelInfoCard extends StatelessWidget {
               value: '${(meta.testAccuracy * 100).toStringAsFixed(1)}%'),
           _InfoRow(
               label: 'Sequence Length', value: '${meta.sequenceLength} steps'),
-          _InfoRow(label: 'Input Features', value: '${meta.numFeatures} (6 IMU + 2 EMG)'),
+          _InfoRow(
+              label: 'Input Features',
+              value: '${meta.numFeatures} (6 IMU + 2 EMG)'),
           _InfoRow(label: 'Classes', value: '4 form categories'),
           _InfoRow(label: 'Sampling Rate', value: '${meta.samplingRateHz} Hz'),
           const SizedBox(height: AppSpacing.sm),

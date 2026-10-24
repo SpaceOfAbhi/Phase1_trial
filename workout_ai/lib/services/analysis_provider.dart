@@ -1,222 +1,188 @@
-import 'dart:async';
+import 'dart:convert';
 import 'package:flutter/foundation.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../models/workout_models.dart';
-import '../services/mock_data_service.dart';
+import 'api_service.dart';
+import 'mock_data_service.dart';
 
-// ---------------------------------------------------------------------------
-// Analysis Provider – orchestrates the form-analysis flow
-// ---------------------------------------------------------------------------
-
-/// AnalysisProvider manages the state of a live or demo analysis session.
-/// 
-/// IMPORTANT: This provider currently uses MOCK data only.
-/// Real model inference will be wired up via [ApiService] (FastAPI backend)
-/// in a future phase.  The [isDemoMode] flag clearly separates the two paths.
 class AnalysisProvider extends ChangeNotifier {
-  AnalysisProvider() {
-    _history = MockDataService.generateHistorySessions();
+  AnalysisProvider({ApiService? api}) : _api = api ?? ApiService() {
+    ready = _loadHistory();
   }
 
-  // ---------------------------------------------------------------------------
-  // State
-  // ---------------------------------------------------------------------------
-
-  bool _isDemoMode = true;
-  bool _isAnalysing = false;
+  final ApiService _api;
+  final _storage = SharedPreferencesAsync();
+  late final Future<void> ready;
+  bool _disposed = false;
+  bool _isDemoMode = false;
   bool _isPaused = false;
-
-  WorkoutSession? _currentSession;
-  WorkoutRepetition? _currentRep;
+  bool _busy = false;
+  bool _importedSession = false;
+  String? _error;
+  WorkoutSession? _session;
+  WorkoutRepetition? _rep;
   List<WorkoutSession> _history = [];
-
+  List<String> _recordings = [];
+  int _recordingIndex = 0;
   String _selectedExercise = 'Bicep Curl';
 
-  Timer? _replayTimer;
-  int _replayIndex = 0;
-
-  // Demo replay state
-  List<ImuSample> _liveImu = [];
-  List<EmgSample> _liveEmg = [];
-
-  // ---------------------------------------------------------------------------
-  // Getters
-  // ---------------------------------------------------------------------------
-
   bool get isDemoMode => _isDemoMode;
-  bool get isAnalysing => _isAnalysing;
+  bool get isAnalysing => _session != null;
   bool get isPaused => _isPaused;
-  WorkoutSession? get currentSession => _currentSession;
-  WorkoutRepetition? get currentRep => _currentRep;
+  bool get isBusy => _busy;
+  bool get usesImportedRecording => _importedSession;
+  String? get error => _error;
+  WorkoutSession? get currentSession => _session;
+  WorkoutRepetition? get currentRep => _rep;
   List<WorkoutSession> get history => List.unmodifiable(_history);
   String get selectedExercise => _selectedExercise;
+  List<ImuSample> get liveImu => _rep?.imuSamples ?? [];
+  List<EmgSample> get liveEmg => _rep?.emgSamples ?? [];
+  PredictionResult? get latestPrediction => _rep?.prediction;
 
-  List<ImuSample> get liveImu => List.unmodifiable(_liveImu);
-  List<EmgSample> get liveEmg => List.unmodifiable(_liveEmg);
+  void _notify() {
+    if (!_disposed) notifyListeners();
+  }
 
-  PredictionResult? get latestPrediction => _currentRep?.prediction;
-
-  // ---------------------------------------------------------------------------
-  // Actions
-  // ---------------------------------------------------------------------------
+  Future<void> _loadHistory() async {
+    try {
+      final saved = await _storage.getString('workout_history');
+      if (saved != null) {
+        _history = (jsonDecode(saved) as List)
+            .map((row) =>
+                WorkoutSession.fromJson(Map<String, dynamic>.from(row as Map)))
+            .toList();
+      }
+    } catch (_) {
+      _error =
+          'Saved history could not be read. Existing stored data has been kept.';
+    }
+    _notify();
+  }
 
   void setDemoMode(bool value) {
+    if (isAnalysing || _busy) return;
     _isDemoMode = value;
-    notifyListeners();
+    _error = null;
+    _notify();
   }
 
   void selectExercise(String exercise) {
     _selectedExercise = exercise;
-    notifyListeners();
+    _notify();
   }
 
-  /// Starts a new analysis session in Dataset Demo mode.
-  /// This replays pre-generated synthetic data one sample at a time to simulate
-  /// a live sensor feed.  The rep classification is also synthetic.
-  Future<void> startDemoSession() async {
-    assert(_isDemoMode, 'startDemoSession called in non-demo mode');
+  Future<void> startDemoSession() => startSession();
 
-    _isAnalysing = true;
+  Future<void> startSession({Map<String, dynamic>? recording}) async {
+    if (_busy || isAnalysing) return;
+    _busy = true;
+    await ready;
+    _busy = false;
+    _importedSession = recording != null;
+    _session = WorkoutSession(
+        id: DateTime.now().microsecondsSinceEpoch.toString(),
+        exercise: _selectedExercise,
+        startTime: DateTime.now(),
+        repetitions: []);
+    _rep = null;
     _isPaused = false;
-    _liveImu = [];
-    _liveEmg = [];
-    _replayIndex = 0;
-
-    final sessionId = 'demo_${DateTime.now().millisecondsSinceEpoch}';
-    _currentSession = WorkoutSession(
-      id: sessionId,
-      exercise: _selectedExercise,
-      startTime: DateTime.now(),
-      repetitions: [],
-    );
-    _currentRep = null;
-
-    notifyListeners();
-    await _runDemoRep(repNumber: 1);
+    await nextRep(recording: recording);
+    if (_session?.totalReps == 0) _session = null;
+    _notify();
   }
 
-  Future<void> _runDemoRep(
-      {required int repNumber, FormClass? forcedClass}) async {
-    final formClass = forcedClass ?? _pickDemoClass(repNumber);
+  Future<void> nextDemoRep() => nextRep();
 
-    final imuFull = MockDataService.generateImuSamples(formClass: formClass);
-    final emgFull = MockDataService.generateEmgSamples(formClass: formClass);
-
-    // Stream samples at ~100 Hz compressed to ~256 ms per rep for demo speed
-    const interval = Duration(milliseconds: 8);
-    _replayTimer?.cancel();
-
-    _replayIndex = 0;
-    _replayTimer = Timer.periodic(interval, (timer) {
-      if (!_isAnalysing || _isPaused) return;
-
-      if (_replayIndex >= imuFull.length) {
-        timer.cancel();
-        _finaliseRep(
-          repNumber: repNumber,
-          formClass: formClass,
-          imuFull: imuFull,
-          emgFull: emgFull,
-        );
-        return;
+  Future<void> nextRep({Map<String, dynamic>? recording}) async {
+    if (_busy || _session == null || _isPaused) return;
+    _busy = true;
+    _error = null;
+    _notify();
+    final sessionId = _session!.id;
+    final number = _session!.totalReps + 1;
+    try {
+      late WorkoutRepetition rep;
+      if (_isDemoMode && recording == null) {
+        rep = MockDataService.generateRepetition(
+            id: '${sessionId}_$number', repNumber: number);
+      } else {
+        if (recording == null) {
+          if (_recordings.isEmpty) _recordings = await _api.recordings();
+          if (_recordings.isEmpty)
+            throw Exception('No recordings are available.');
+          recording = await _api
+              .recording(_recordings[_recordingIndex % _recordings.length]);
+        }
+        final output = await _api.predict(recording);
+        rep = WorkoutRepetition.fromJson({
+          ...output,
+          'id': '${sessionId}_$number',
+          'rep_number': number,
+          'timestamp': DateTime.now().toIso8601String(),
+          'source': recording['source'] ?? 'user_recording',
+          'expected_label': recording['expected_label']
+        });
+        _recordingIndex++;
       }
-
-      _liveImu = imuFull.sublist(0, _replayIndex + 1);
-      _liveEmg = emgFull.sublist(0, _replayIndex + 1);
-      _replayIndex++;
-      notifyListeners();
-    });
-  }
-
-  void _finaliseRep({
-    required int repNumber,
-    required FormClass formClass,
-    required List<ImuSample> imuFull,
-    required List<EmgSample> emgFull,
-  }) {
-    final repId = '${_currentSession!.id}_rep_$repNumber';
-    final prediction = MockDataService.generatePrediction(formClass);
-
-    final rep = WorkoutRepetition(
-      id: repId,
-      imuSamples: imuFull,
-      emgSamples: emgFull,
-      prediction: prediction,
-      repNumber: repNumber,
-    );
-
-    _currentRep = rep;
-
-    final updatedReps = [..._currentSession!.repetitions, rep];
-    _currentSession = WorkoutSession(
-      id: _currentSession!.id,
-      exercise: _currentSession!.exercise,
-      startTime: _currentSession!.startTime,
-      repetitions: updatedReps,
-    );
-
-    notifyListeners();
-  }
-
-  /// Records the next repetition in the current demo session.
-  Future<void> nextDemoRep() async {
-    if (_currentSession == null || !_isAnalysing) return;
-    final nextRepNum = _currentSession!.totalReps + 1;
-    _liveImu = [];
-    _liveEmg = [];
-    await _runDemoRep(repNumber: nextRepNum);
+      if (_session?.id != sessionId) return;
+      _rep = rep;
+      _session = WorkoutSession(
+          id: _session!.id,
+          exercise: _session!.exercise,
+          startTime: _session!.startTime,
+          repetitions: [..._session!.repetitions, rep]);
+    } catch (error) {
+      _error = error.toString().replaceFirst('Exception: ', '');
+    } finally {
+      _busy = false;
+      _notify();
+    }
   }
 
   void pauseResume() {
+    if (_busy) return;
     _isPaused = !_isPaused;
-    notifyListeners();
+    _notify();
   }
 
-  void stopSession() {
-    _replayTimer?.cancel();
-    _isAnalysing = false;
-    _isPaused = false;
-
-    if (_currentSession != null && _currentSession!.totalReps > 0) {
+  Future<void> stopSession() async {
+    if (_busy) return;
+    final session = _session;
+    if (session == null) return;
+    _busy = true;
+    _notify();
+    if (session.totalReps > 0) {
       final finished = WorkoutSession(
-        id: _currentSession!.id,
-        exercise: _currentSession!.exercise,
-        startTime: _currentSession!.startTime,
-        endTime: DateTime.now(),
-        repetitions: _currentSession!.repetitions,
-      );
-      _history = [finished, ..._history];
+          id: session.id,
+          exercise: session.exercise,
+          startTime: session.startTime,
+          endTime: DateTime.now(),
+          repetitions: session.repetitions);
+      final updated = [finished, ..._history];
+      try {
+        await _storage.setString('workout_history',
+            jsonEncode(updated.map((s) => s.toJson()).toList()));
+      } catch (_) {
+        _error =
+            'History could not be saved. Keep this session open and retry.';
+        _busy = false;
+        _notify();
+        return;
+      }
+      _history = updated;
     }
-
-    _currentSession = null;
-    _currentRep = null;
-    _liveImu = [];
-    _liveEmg = [];
-
-    notifyListeners();
-  }
-
-  // ---------------------------------------------------------------------------
-  // Helpers
-  // ---------------------------------------------------------------------------
-
-  FormClass _pickDemoClass(int repNumber) {
-    // Cycle through all classes for demonstration purposes
-    final classes = [
-      FormClass.good,
-      FormClass.good,
-      FormClass.partialRom,
-      FormClass.good,
-      FormClass.excessiveSwing,
-      FormClass.good,
-      FormClass.excessiveElbowMovement,
-      FormClass.good,
-    ];
-    return classes[(repNumber - 1) % classes.length];
+    _session = null;
+    _rep = null;
+    _isPaused = false;
+    _busy = false;
+    _notify();
   }
 
   @override
   void dispose() {
-    _replayTimer?.cancel();
+    _disposed = true;
+    _api.dispose();
     super.dispose();
   }
 }

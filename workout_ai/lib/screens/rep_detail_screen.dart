@@ -83,19 +83,17 @@ class _RepDetailScreenState extends State<RepDetailScreen>
         ),
       ),
       body: SingleChildScrollView(
-        physics: const BouncingScrollPhysics(),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             // --- Prediction Hero Banner ---
             Container(
               width: double.infinity,
+              margin: const EdgeInsets.fromLTRB(20, 8, 20, 0),
               padding: const EdgeInsets.all(AppSpacing.lg),
               decoration: BoxDecoration(
-                color: color.withValues(alpha: 0.1),
-                border: Border(
-                  bottom: BorderSide(color: color.withValues(alpha: 0.3)),
-                ),
+                color: AppColors.surface,
+                borderRadius: BorderRadius.circular(AppRadius.lg),
               ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -134,6 +132,10 @@ class _RepDetailScreenState extends State<RepDetailScreen>
                       ),
                     ],
                   ),
+                  Text(pred.sourceLabel, style: theme.textTheme.bodyMedium),
+                  if (pred.expectedLabel != null)
+                    Text('Dataset label: ${pred.expectedLabel}',
+                        style: theme.textTheme.bodyMedium),
                   if (pred.isDemo) ...[
                     const SizedBox(height: AppSpacing.md),
                     Container(
@@ -149,14 +151,15 @@ class _RepDetailScreenState extends State<RepDetailScreen>
                           const Icon(Icons.science_rounded,
                               size: 13, color: AppColors.demoChip),
                           const SizedBox(width: 5),
-                          Text(
+                          Flexible(
+                              child: Text(
                             'MOCK PREDICTION – Dataset Demo Mode. '
                             'Not real CNN-LSTM inference.',
                             style: theme.textTheme.labelSmall?.copyWith(
                               color: AppColors.demoChip,
                               fontSize: 10,
                             ),
-                          ),
+                          )),
                         ],
                       ),
                     ),
@@ -197,13 +200,21 @@ class _RepDetailScreenState extends State<RepDetailScreen>
             ),
             const SizedBox(height: AppSpacing.sm),
             Container(
-              color: AppColors.surface,
+              margin: const EdgeInsets.symmetric(horizontal: AppSpacing.md),
+              padding: const EdgeInsets.all(4),
+              decoration: BoxDecoration(
+                  color: AppColors.surface,
+                  borderRadius: BorderRadius.circular(20)),
               child: TabBar(
                 controller: _tabController,
-                labelColor: AppColors.primary,
+                labelColor: AppColors.background,
                 unselectedLabelColor: AppColors.textMuted,
                 indicatorColor: AppColors.primary,
-                indicatorSize: TabBarIndicatorSize.label,
+                indicatorSize: TabBarIndicatorSize.tab,
+                indicator: BoxDecoration(
+                    color: AppColors.primary,
+                    borderRadius: BorderRadius.circular(100)),
+                dividerColor: Colors.transparent,
                 labelStyle: const TextStyle(
                   fontSize: 12,
                   fontWeight: FontWeight.w600,
@@ -216,7 +227,7 @@ class _RepDetailScreenState extends State<RepDetailScreen>
               ),
             ),
             SizedBox(
-              height: 200,
+              height: 280,
               child: TabBarView(
                 controller: _tabController,
                 children: [
@@ -286,8 +297,8 @@ class _ConfidenceCircle extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     return Container(
-      width: 80,
-      height: 80,
+      width: 80 * MediaQuery.textScalerOf(context).scale(12) / 12,
+      height: 80 * MediaQuery.textScalerOf(context).scale(12) / 12,
       decoration: BoxDecoration(
         shape: BoxShape.circle,
         color: color.withValues(alpha: 0.12),

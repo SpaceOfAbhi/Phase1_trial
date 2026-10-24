@@ -42,6 +42,10 @@ class WorkoutAIApp extends StatelessWidget {
         title: 'WorkoutAI',
         debugShowCheckedModeBanner: false,
         theme: AppTheme.dark,
+        builder: (context, child) => Center(
+          child: ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 720), child: child),
+        ),
 
         // ── Meta / SEO (for Flutter Web) ──────────────────────────────────
         // Title is set per-route below for web.

@@ -58,7 +58,7 @@ class SignalChart extends StatelessWidget {
           isCurved: true,
           curveSmoothness: 0.25,
           color: colors[ci % colors.length],
-          barWidth: 1.8,
+          barWidth: 2.4,
           dotData: const FlDotData(show: false),
           belowBarData: BarAreaData(
             show: ci == 0,
@@ -90,7 +90,8 @@ class SignalChart extends StatelessWidget {
       computedMax += pad;
     }
 
-    return Column(
+    return GlassCard(
+        child: Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         // Title + legend
@@ -100,7 +101,7 @@ class SignalChart extends StatelessWidget {
               child: Text(
                 title,
                 style: theme.textTheme.titleMedium?.copyWith(
-                  color: AppColors.textSecondary,
+                  color: AppColors.textPrimary,
                 ),
               ),
             ),
@@ -124,7 +125,7 @@ class SignalChart extends StatelessWidget {
                       legendLabels[i],
                       style: theme.textTheme.labelSmall?.copyWith(
                         color: AppColors.textSecondary,
-                        fontSize: 10,
+                        fontSize: 12,
                       ),
                     ),
                   ],
@@ -148,7 +149,8 @@ class SignalChart extends StatelessWidget {
                 horizontalInterval: (computedMax - computedMin) / 4,
                 getDrawingHorizontalLine: (_) => FlLine(
                   color: AppColors.border.withValues(alpha: 0.4),
-                  strokeWidth: 0.5,
+                  strokeWidth: 0.7,
+                  dashArray: [3, 4],
                 ),
               ),
               titlesData: FlTitlesData(
@@ -160,8 +162,8 @@ class SignalChart extends StatelessWidget {
                     getTitlesWidget: (val, meta) {
                       return Text(
                         val.toStringAsFixed(1),
-                        style: theme.textTheme.labelSmall
-                            ?.copyWith(fontSize: 9, color: AppColors.textMuted),
+                        style: theme.textTheme.labelSmall?.copyWith(
+                            fontSize: 11, color: AppColors.textMuted),
                       );
                     },
                   ),
@@ -174,8 +176,8 @@ class SignalChart extends StatelessWidget {
                     getTitlesWidget: (val, meta) {
                       return Text(
                         val.toInt().toString(),
-                        style: theme.textTheme.labelSmall
-                            ?.copyWith(fontSize: 9, color: AppColors.textMuted),
+                        style: theme.textTheme.labelSmall?.copyWith(
+                            fontSize: 11, color: AppColors.textMuted),
                       );
                     },
                   ),
@@ -197,7 +199,8 @@ class SignalChart extends StatelessWidget {
                   getTooltipColor: (_) => AppColors.surfaceHighest,
                   getTooltipItems: (touchedSpots) {
                     return touchedSpots.map((spot) {
-                      final label = legendLabels[spot.barIndex % legendLabels.length];
+                      final label =
+                          legendLabels[spot.barIndex % legendLabels.length];
                       return LineTooltipItem(
                         '$label: ${spot.y.toStringAsFixed(2)}',
                         TextStyle(
@@ -215,7 +218,7 @@ class SignalChart extends StatelessWidget {
           ),
         ),
       ],
-    );
+    ));
   }
 
   Widget _emptyPlaceholder(ThemeData theme) {
@@ -327,54 +330,37 @@ class FormScoreRing extends StatelessWidget {
             ? AppColors.warning
             : AppColors.error;
 
-    return SizedBox(
-      width: size,
-      height: size,
-      child: Stack(
-        alignment: Alignment.center,
-        children: [
-          PieChart(
-            PieChartData(
-              startDegreeOffset: -90,
-              sections: [
-                PieChartSectionData(
-                  value: pct,
-                  color: color,
-                  radius: 12,
-                  showTitle: false,
-                ),
-                PieChartSectionData(
-                  value: 1.0 - pct,
-                  color: AppColors.surfaceHighest,
-                  radius: 12,
-                  showTitle: false,
-                ),
-              ],
-              centerSpaceRadius: size / 2 - 14,
-              sectionsSpace: 0,
-            ),
-            swapAnimationDuration: const Duration(milliseconds: 800),
-            swapAnimationCurve: Curves.easeOut,
-          ),
-          Column(
-            mainAxisSize: MainAxisSize.min,
+    return Semantics(
+      label: 'Form Score',
+      value: '${score.toStringAsFixed(0)}%',
+      child: SizedBox(
+          width: size,
+          height: size,
+          child: Stack(
+            alignment: Alignment.center,
             children: [
-              Text(
-                '${score.toStringAsFixed(0)}%',
-                style: theme.textTheme.headlineMedium?.copyWith(
-                  color: color,
-                  fontWeight: FontWeight.w800,
-                ),
-              ),
-              Text(
-                'Form Score',
-                style:
-                    theme.textTheme.labelSmall?.copyWith(fontSize: 9),
-              ),
+              Positioned.fill(
+                  child: Padding(
+                padding: const EdgeInsets.all(8),
+                child: CircularProgressIndicator(
+                    value: pct.clamp(0, 1),
+                    strokeWidth: size * 0.12,
+                    strokeCap: StrokeCap.round,
+                    backgroundColor: color.withValues(alpha: 0.16),
+                    color: color),
+              )),
+              Column(mainAxisSize: MainAxisSize.min, children: [
+                Text('${score.toStringAsFixed(0)}%',
+                    style: theme.textTheme.headlineMedium?.copyWith(
+                        color: AppColors.textPrimary,
+                        fontSize: size > 100 ? 26 : 16,
+                        fontWeight: FontWeight.w600)),
+                Text('Form Score',
+                    style: theme.textTheme.labelSmall
+                        ?.copyWith(fontSize: size > 100 ? 10 : 8)),
+              ]),
             ],
-          ),
-        ],
-      ),
+          )),
     );
   }
 }
@@ -438,7 +424,7 @@ class ProbabilityBars extends StatelessWidget {
                       '${(prob * 100).toStringAsFixed(1)}%',
                       style: theme.textTheme.labelSmall?.copyWith(
                         color: _colors[i],
-                        fontSize: 10,
+                        fontSize: 12,
                       ),
                     ),
                   ],
