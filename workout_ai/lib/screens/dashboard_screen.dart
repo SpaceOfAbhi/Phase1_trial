@@ -193,7 +193,7 @@ class _DashboardAppBar extends StatelessWidget {
                   child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                    Text('WorkoutAI', style: theme.textTheme.displayMedium),
+                    Text('Liftly', style: theme.textTheme.displayMedium),
                     const SizedBox(height: 4),
                     Text('CNN-LSTM Form Analyser',
                         style: theme.textTheme.bodyMedium),

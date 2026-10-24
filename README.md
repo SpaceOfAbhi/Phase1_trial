@@ -1,4 +1,4 @@
-# WorkoutAI
+# Liftly
 
 Flutter workout analysis app with a local Python API and the supplied trained CNN-LSTM model.
 

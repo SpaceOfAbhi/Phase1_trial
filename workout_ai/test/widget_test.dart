@@ -10,9 +10,10 @@ void main() {
     SharedPreferencesAsyncPlatform.instance =
         InMemorySharedPreferencesAsync.empty();
   });
-  testWidgets('WorkoutAI app launches without error',
+  testWidgets('Liftly app launches without error',
       (WidgetTester tester) async {
     await tester.pumpWidget(const WorkoutAIApp());
     expect(find.byType(WorkoutAIApp), findsOneWidget);
+    expect(find.text('Liftly'), findsOneWidget);
   });
 }

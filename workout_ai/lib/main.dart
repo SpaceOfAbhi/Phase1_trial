@@ -39,7 +39,7 @@ class WorkoutAIApp extends StatelessWidget {
         ChangeNotifierProvider(create: (_) => AnalysisProvider()),
       ],
       child: MaterialApp(
-        title: 'WorkoutAI',
+        title: 'Liftly',
         debugShowCheckedModeBanner: false,
         theme: AppTheme.dark,
         builder: (context, child) => Center(

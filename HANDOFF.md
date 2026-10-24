@@ -28,7 +28,9 @@ Android layout refinement: 16px page margins, 20px main-card padding, 12px relat
 
 Validation: five Flutter tests (including all screens at 360px with 1.0 and 1.6 text scales), three backend tests and the release web build passed. Refreshed docs/screenshots/dashboard.jpg. Existing analyzer/font-family and upstream test-client warnings remain; native Android/iOS builds were not run.
 
-Publishing: the existing raw_emg.csv exceeds GitHub's ordinary-file limit. Use Git LFS; the unpublished main history is migrated with a local backup branch before the first push. Generated Flutter caches and machine-specific configuration are kept locally and excluded from version control. Branding ideas are proposals; WorkoutAI has not been renamed.
+Publishing: main was pushed to SpaceOfAbhi/Phase1_trial on GitHub. raw_emg.csv uses Git LFS; the original unpublished history is preserved locally on backup-before-lfs-20261024 (do not push that backup branch). Generated Flutter caches and machine-specific configuration stay local and excluded from version control.
+
+Branding: the owner selected Liftly. Updated visible app names on the dashboard, web and mobile platforms, keeping package IDs and saved history intact. docs/branding contains a generated logo exploration board and its prompt; Uplift is recommended. No final logo was selected or installed. Name/trademark availability is unchecked.
 
 ## Setup issues resolved
 

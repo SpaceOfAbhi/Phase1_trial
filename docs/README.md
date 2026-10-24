@@ -1,10 +1,11 @@
-# WorkoutAI
+# Liftly
 
 A university prototype: Flutter displays workout recordings; a local Python API runs the supplied trained model and returns form predictions. Keep all project information in this repository, outside the owner's second-brain vaults.
 
 - [Run the app](running.md)
 - [Understand inference and the input format](inference.md)
 - [Hardware requirements and remaining work](hardware.md)
+- [Liftly name and logo concepts](branding/README.md)
 
 ## What works
 
