@@ -1,0 +1,4 @@
+sensor_type,sampling_rate_hz,sensor_location,channels
+IMU,100,dorsal forearm near wrist (dominant arm),accelerometer_x;accelerometer_y;accelerometer_z;gyroscope_x;gyroscope_y;gyroscope_z
+EMG,1000,biceps brachii muscle belly (dominant arm),biceps_emg
+EMG,1000,triceps brachii lateral head (dominant arm),triceps_emg

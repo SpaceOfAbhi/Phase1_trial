@@ -1,0 +1,24 @@
+{
+    "sequence_length": 256,
+    "num_features": 8,
+    "features": [
+        "accelerometer_x",
+        "accelerometer_y",
+        "accelerometer_z",
+        "gyroscope_x",
+        "gyroscope_y",
+        "gyroscope_z",
+        "biceps_rms",
+        "triceps_rms"
+    ],
+    "classes": [
+        "EXCESSIVE_ELBOW_MOVEMENT",
+        "EXCESSIVE_SWING",
+        "GOOD",
+        "PARTIAL_ROM"
+    ],
+    "sampling_rate_hz": 100,
+    "test_accuracy": 0.8899999856948853,
+    "test_loss": 0.26468098163604736,
+    "dataset_type": "synthetic"
+}
